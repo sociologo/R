@@ -4,6 +4,8 @@ https://www.geosegmentacion.cl/
 
 https://www.ine.gob.cl/estadisticas/sociales/censos-de-poblacion-y-vivienda/censo-de-poblacion-y-vivienda
 
+https://www.ine.gob.cl/herramientas/portal-de-mapas/geodatos-abiertos
+
 Análisis de la Pobreza Multidimensional:\
 Desarrollar un modelo que identifique y visualice las áreas con mayor pobreza multidimensional, ayudando a ONGs y gobiernos locales a focalizar sus recursos.
 
