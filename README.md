@@ -1,5 +1,7 @@
 # R
 
+https://www.geosegmentacion.cl/
+
 Análisis de la Pobreza Multidimensional:\
 Desarrollar un modelo que identifique y visualice las áreas con mayor pobreza multidimensional, ayudando a ONGs y gobiernos locales a focalizar sus recursos.
 
