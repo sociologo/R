@@ -1,0 +1,176 @@
+---
+title: "sae"
+author: "Christian Castro"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+sae: Un paquete R para la estimación en áreas pequeñas
+por Isabel Molina y Yolanda Marhuenda
+
+Resumen
+Describimos el paquete R sae para la estimación en áreas pequeñas. Este paquete puede ser utilizado para obtener estimaciones basadas en modelos para áreas pequeñas, utilizando una variedad de modelos a nivel de área y de unidad, junto con estimaciones directas e indirectas básicas. Los errores cuadráticos medios se estiman mediante aproximaciones analíticas en modelos simples y aplicando procedimientos bootstrap en modelos más complejos. Describimos las funciones del paquete y mostramos cómo usarlas a través de ejemplos.
+
+El paquete R en resumen
+
+El paquete R sae implementa métodos de estimación en áreas pequeñas bajo los siguientes modelos a nivel de área:
+
+Modelo Fay-Herriot (incluyendo métodos comunes de ajuste);
+
+Modelo Fay-Herriot extendido que tiene en cuenta la correlación espacial;
+
+Modelo Fay-Herriot extendido que permite la correlación espacio-temporal.
+
+El paquete también incluye métodos de estimación en áreas pequeñas basados en el modelo básico a nivel de unidad llamado modelo de regresión lineal con error anidado.
+
+Los métodos de estimación disponibles bajo este modelo son:
+
+Predictores empíricos mejores lineales insesgados (EBLUPs) de las medias de área bajo el modelo de regresión lineal con error anidado para la variable objetivo.
+Estimaciones empíricas mejores/Bayes (EB) de parámetros de área no lineales generales bajo el modelo de regresión lineal con error anidado para transformaciones de Box-Cox o de potencia de la variable objetivo.
+También se incluyen métodos para la estimación de las medidas de incertidumbre correspondientes de los estimadores de áreas pequeñas obtenidos de los modelos anteriores. Además, el paquete incluye los siguientes estimadores directos e indirectos básicos.
+
+
+
+
+Estimadores directos de Horvitz-Thompson de las medias de áreas pequeñas bajo diseños de muestreo generales;
+Estimador sintético post-estratificado;
+Estimador compuesto.
+Este artículo describe las técnicas de estimación en áreas pequeñas basadas en modelos mencionadas anteriormente e ilustra el uso de las funciones correspondientes a través de ejemplos adecuados. Para una descripción de los estimadores directos e indirectos básicos incluidos en el paquete y una descripción detallada de toda la metodología implementada, consulta CRAN.
+
+Introducción
+La creciente demanda de información más oportuna y detallada, junto con el alto costo de las entrevistas a menudo conducen a una explotación extensiva de los datos de la encuesta. De hecho, muchas veces los datos de las encuestas son utilizados para producir estimaciones en dominios o áreas más pequeñas que aquellas para las que se planificó originalmente la encuesta.
+
+Para un área con un tamaño de muestra pequeño, un estimador directo, basado únicamente en los datos de la muestra
+viniendo de esa zona, podría ser muy poco fiable. Esta limitación del tamaño de la muestra impide la producción de
+cifras estadísticas al nivel solicitado y, por lo tanto, restringe la disponibilidad de información estadística
+para el público o el usuario particular. Por el contrario, un estimador indirecto para un área también utiliza datos externos.
+datos de otras áreas para aumentar la eficiencia aumentando el tamaño efectivo de la muestra.
+
+
+Among
+indirect estimators, we find those based on explicit regression models, called model-based estimators.
+These estimators are based on assuming a relation between the target variable and some explanatory
+variables that is constant across areas. The common model parameters are estimated using the whole
+bunch of sample data, which often leads to small area estimators with appreciably better efficiency
+than direct estimators as long as model assumptions hold. Thus, these techniques provide statistical
+figures at a very disaggregated level without increasing the area-specific sample sizes and therefore
+without increasing the survey cost. The small area estimation (SAE) methods included in the R package
+sae have applications in many different fields such as official statistics, agriculture, ecology, medicine
+and engineering. For a comprehensive account of SAE techniques, see Rao (2003).
+The R package sae is mainly designed for model-based small area estimation. Nevertheless, simple
+direct and indirect estimators are included for didactic purposes and to allow the user to do cross.
+
+comparisons between the very simple indirect methods and the more advanced model-based methods.
+Model-based point estimators can be supplemented with their corresponding estimated mean squared
+errors (MSEs), which are computed using analytical approximations in some cases and bootstrap
+procedures in other cases.
+Area level models are used to obtain small area estimators when auxiliary data are available only
+as area aggregates. The basic area level model is the Fay-Herriot (FH) model (Fay and Herriot, 1979).
+Small area estimates based on this model and analytical MSE estimates can be obtained using the
+functions eblupFH() and mseFH() respectively.
+An extension of the basic FH model to the case of (unexplained) spatial correlation among data
+from neighboring areas is the spatial Fay-Herriot (SFH) model. The function eblupSFH considers the
+SFH model in which area effects are assumed to follow a simultaneous autoregressive process of
+order one or SAR(1) process. Small area estimates supplemented with analytical MSE estimates can
+be obtained using the function mseSFH(). Alternatively, parametric and non-parametric bootstrap
+MSE estimates for the small area estimators obtained from the SFH model are given by the functions
+pbmseSFH() and npbmseSFH() respectively.
+A spatio-temporal Fay-Herriot (STFH) model can be used when data from several periods of
+time are available and there is also spatial correlation. Apart from the area effects following a SAR(1)
+process, the STFH model considered by function eblupSTFH() includes time effects nested within
+areas, following for each domain an i.i.d. autorregresive process of order 1 or AR(1). The function
+pbmseSTFH() gives small area estimates and parametric bootstrap MSE estimates.
+When auxiliary information is available at the unit level, the basic small area estimators are those
+based on the nested error linear regression model of Battese et al. (1988), called hereafter BHF model.
+Function eblupBHF() gives estimates of small area means based on BHF model. Parametric bootstrap
+MSE estimates are obtained calling function pbmseBHF().
+General small area parameters obtained as a nonlinear function of the response variable in the
+model, such as income-based poverty indicators, can be estimated under BHF model using function
+ebBHF(). Function pbmseebBHF() gives the corresponding parametric bootstrap MSE estimates.
+The paper is structured as follows. First, we discuss the differences between design and model
+based inference and introduce the notation used throughout the paper. Then, we describe one by one
+the model-based SAE methods implemented in the package. For each method, we briefly describe the
+theory behind and the use of the functions, including suitable examples. Finally, we summarize other
+existing software for small area estimation.
+
+Design versus model-based inference
+In survey sampling, the population is a finite collection of distinguishable and countable units. The
+measurements of the target variable in the population units are assumed to be non-stochastic and the
+aim is to estimate characteristics of the population, i.e., functions of the population measurements of
+the study variable in the population units, which are consequently non-stochastic as well. A sample
+is simply a collection of population units and inference is typically carried out under the probability
+distribution induced by the random mechanism used to draw the sample, i.e., the sampling design.
+Thus, desirable properties of estimators such as unbiasedness are established in terms of averages
+over all possible samples.
+In model-based inference, the term population refers simply to a random variable and, in the
+simplest case, the sample is a collection of independent variables distributed identically as the original
+random variable. The parameters of interest are characteristics of the probability distribution of the
+original random variable such as moments, which are assumed to be fixed under the frequentist setup.
+In small area estimation, the subpopulations of interest are called indistinctly areas or domains.
+These areas are assumed to be finite although they are typically large. However, due to the lack of
+sample data within those areas, models are needed to link all areas through some common parameters
+so as to “borrow strength" from related areas and then to improve efficiency as long as model
+assumptions hold. Thus, model-based small area methods combine the finite population setup with
+the randomness of the measurements of the variable of interest in the population units, which are
+assumed to follow a regression model. Consequently, target quantities, defined as functions of the
+population measurements, are also random.
+
+
+Notation
+As mentioned above, here we consider a large but finite population U. This population is assumed
+to be partitioned into D mutually exclusive and exhaustive domains or areas U1
+, . . . , UD of sizes
+
+N1
+, . . . , ND. Let Ydj be the measurement of the variable of interest for individual j within area d and
+let yd = (Yd1
+, . . . ,YdNd
+)
+> be the vector of measurements for area d. The target parameters have the
+form δd = h(yd
+), d = 1, . . . , D, for a known measurable function h. Particular target parameters of
+common interest are the domain means
+δd = Y¯
+d = N
+−1
+d
+Nd
+∑
+j=1
+Ydj, d = 1, . . . , D.
+Estimation of the target parameters is based on a sample s drawn from the population U. Let sd be the
+subsample from domain Ud of size nd
+, d = 1, . . . , D, where n = ∑
+D
+d=1
+nd
+is the total sample size. We
+will denote by rd = Ud − sd
+the sample complement from domain d of size Nd − nd
+, for d = 1, . . . , D.
+Estimation of the area parameters δd = h(yd
+), d = 1, . . . , D, can be done using area or unit-level
+models. In area level models, the auxiliary information comes in the form of aggregated values of
+some explanatory variables at the domains, typically true area means. In contrast, unit-level models
+make use of the individual values of the explanatory variables.
+The package sae contains functions that provide small area estimators under both types of models. Functions for point estimation based on area level models include eblupFH(), eblupSFH() and
+eblupSTFH(). Functions for unit-level data are eblupBHF() and ebBHF(). Functions for estimation of
+the usual accuracy measures are also included. Below we describe the assumed models and the use of
+these functions, including examples of use. The package sae depends on packages nlme (Pinheiro
+et al., 2013) and MASS (Venables and Ripley, 2002). The examples of these functions have been run
+under R version x64 3.1.3.
+
+
+
+
+
+```{r}
+?sae
+```
+https://journal.r-project.org/archive/2015/RJ-2015-007/RJ-2015-007.pdf
+
+https://journal.r-project.org/archive/2015/RJ-2015-007/index.html
+https://journal.r-project.org/archive/2021/RJ-2021-096/RJ-2021-096.pdf
+https://observatorio.ministeriodesarrollosocial.gob.cl/storage/docs/pobreza-comunal/2017/DOCUMENTO_METODOLOGICO_SAE_2017.pdf
+https://traspaso.digital.gob.cl/actas/otros/descarga/Informe_SAE_2020.pdf
+

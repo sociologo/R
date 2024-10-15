@@ -1,0 +1,652 @@
+---
+title: "The Fay Herriot Model"
+author: 
+  - name: Christian Castro
+    degrees: "Sociólogo, Analista programador"
+date: "`r lubridate::today()`"
+abstract: |
+
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 2
+    number_sections: true
+    code_folding: hide
+    theme: cosmo
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# 1 Estimadoresmuestrales
+
+## Estimadores basados en el diseño
+
+Estimadores directos
+
+Los estimadores directos basados en el diseño (design-based) consideran las propiedades del diseño muestral para realizar la estimación de algún parámetro de interés como el total o la media. El estimador Horvitz y
+Thompson es el estimador basado en el diseño más conocido, el cual se basa solamente en las probabilidades de inclusión en la muestra.
+
+## El estimador de Horvitz-Thompson (HT)
+
+El estimador de HT se utiliza para estimar el total o la media de una variable de interés en una población a partir de una muestra. Es particularmente útil en situaciones donde las unidades de la población tienen diferentes probabilidades de ser incluidas en la muestra, lo que se conoce como muestreo con probabilidades desiguales.
+
+
+El estimador de HT ajusta los valores de la muestra según las probabilidades de inclusión de cada unidad. Esto se hace para corregir cualquier sesgo que pueda surgir debido a las diferentes probabilidades de inclusión.
+
+Consideramos una población finita U de tamaño N, donde yi, i ϵ U son los valores de la variable de interés en la población. A través de una muestra k ϵ U tomada de la población U deseamos obtener un estadístico
+que se aproxime al valor del total poblacional Y. 
+
+La fórmula del estimador de Horvitz-Thompson para el total de la población es:
+
+$$
+\hat{\tau}_{HT} = \sum_{i \in s} \frac{y_i}{\pi_i}
+$$
+Donde:
+
+$\hat{\tau}_{HT}$ es el estimador de Horvitz-Thompson para el total.\
+$s$ es la muestra.\
+$y_i$ es el valor de la variable de interés para la unidad $i$.\
+$\pi_i$ es la probabilidad de inclusión de la unidad $i$ en la muestra.
+
+***
+
+La varianza del estimador de Horvitz-Thompson se define como:
+
+$$
+\text{Var}(\hat{\tau}_{HT}) = \sum_{i \in U} \sum_{j \in U} \left( \frac{\pi_{ij} - \pi_i \pi_j}{\pi_{ij}} \right) \frac{y_i y_j}{\pi_i \pi_j}
+$$
+
+Donde:
+
+$\text{Var}(\hat{\tau}_{HT})$ es la varianza del estimador de Horvitz-Thompson.\
+$U$ es la población.\
+$\pi_i$ es la probabilidad de inclusión de la unidad $i$.\
+$\pi_{ij}$ es la probabilidad de inclusión conjunta de las unidades $i$ y $ j$.\
+$y_i$ y $y_j$ son los valores de la variable de interés para las unidades $i$ y $j$.
+
+### Ejemplo en R
+
+
+```{r 1, message=FALSE, warning=FALSE, include = FALSE, echo = FALSE}
+# Cargar el paquete sampling
+library(sampling)
+
+# Crear un ejemplo de datos
+set.seed(123)
+N <- 100  # Tamaño de la población
+n <- 20   # Tamaño de la muestra
+
+# Generar una población con una variable de interés
+population <- data.frame(ID = 1:N, 
+                         y = rnorm(N, mean = 50, sd = 10))
+
+# Calcular las probabilidades de inclusión
+pik <- inclusionprobabilities(population$y, n)
+
+# Seleccionar una muestra usando muestreo Poisson
+sample_indices <- UPpoisson(pik)
+sample <- population[sample_indices == 1, ]
+
+# Calcular el estimador de Horvitz-Thompson para el total de la población
+HT_estimate <- HTestimator(sample$y, pik[sample_indices == 1])
+```
+
+Tenemos una población de 100 registros. Listamos los tres primeros y tres últimos elementos.
+
+```{r 2, message=FALSE, warning=FALSE, echo = FALSE}
+# Seleccionar los primeros tres y los últimos tres registros
+library(dplyr)
+head_rows <- head(population, 3)
+tail_rows <- tail(population, 3)
+result <- bind_rows(head_rows, tail_rows)
+result
+```
+Listamos la probabilidad de inclusion en la lista
+
+```{r 3}
+pik
+```
+Listamos los indices de los elementos elegidos
+
+```{r 4}
+sample_indices
+```
+Listamos los tres primeros y tres últimos elementos de las muestras seleccionadas
+
+```{r 5}
+library(dplyr)
+head_rows <- head(sample, 3)
+tail_rows <- tail(sample, 3)
+sample <- bind_rows(head_rows, tail_rows)
+sample
+```
+Calculamos la suma total de toda la población:
+
+```{r 7}
+# Calcular la suma de la columna y
+total_y <- sum(population$y)
+# Mostrar el resultado
+total_y
+```
+
+Vemos nuestro estimador HT:
+
+```{r 6}
+# Mostrar el resultado
+HT_estimate
+```
+
+## Estimadores basados en el modelo
+
+Por otro lado, los estimadores basados en el modelo llamados
+también estimadores indirectos son sumamente útiles cuando el tamaño de muestra de algunos dominios o subpoblaciones son pequeños por lo que se utiliza información auxiliar de otros dominios para mejorar la precisión de las estimaciones. Entre los tipos de estimadores indirectos se encuentran los estimadores sintéticos y estimadores compuestos.
+
+Estimadores sintéticos
+
+Los estimadores sintéticos se caracterizan por derivar un **estimador indirecto para un área pequeña** bajo el supuesto de que las áreas pequeñas tienen las mismas características que el área para el cual se tiene información auxiliar.Entre los estimadores sintéticos se encuentran los derivados del modelo sin información auxiliar (Area level auxiliary information), modelo con información auxiliar a nivel de área (area level auxiliary information) y modelo con información auxiliar a nivel de unidad (unit level auxiliary information). Como ejemplo, definiremos el modelo con información auxiliar a nivel de área definido por Rao y Molina(2015).
+
+### Fórmula del modelo de regresión lineal con información auxiliar a nivel de área.
+
+
+
+$$
+\tilde{Y}_i = \beta_0 + \beta_1 x_{i1} + \beta_2 x_{i2} + \cdots + \beta_p x_{ip}, \quad i = 1, \ldots, m
+$$
+
+Donde:
+
+$$
+\begin{array}{l}
+  \tilde{Y}_i : \text{Estimación del área pequeña } i \\
+  \beta_0 : \text{Intercepto del modelo} \\
+  \beta_1, \beta_2, \ldots, \beta_p : \text{Coeficientes de regresión para las covariables} \\
+  x_{i1}, x_{i2}, \ldots, x_{ip} : \text{Covariables auxiliares para el área } i \\
+  i : \text{Índice del área pequeña, donde } i = 1, \ldots, m \\
+  m : \text{Número total de áreas pequeñas}
+\end{array}
+$$
+
+Los coeficientes de regresión estimados ($\beta_0, \hat{\beta}_1, \ldots, \hat{\beta}_p$) facilitan la obtención de predictores sintéticos de regresión para todas las n áreas, los cuales están dados por
+
+$$
+\hat{\tilde{Y}_i} = \mathbf{x}_i^\top \hat{\beta}, \quad i = 1, \ldots, n
+$$
+
+```{r}
+
+# Crear un conjunto de datos de ejemplo
+set.seed(123)
+n <- 10  # Número de áreas
+p <- 3   # Número de covariables
+
+# Generar covariables auxiliares
+x <- matrix(rnorm(n * p), nrow = n, ncol = p)
+colnames(x) <- paste0("x", 1:p)
+
+# Coeficientes de regresión verdaderos
+beta <- c(2, -1, 0.5, 1.5)
+
+# Generar la variable de interés
+y <- beta[1] + x %*% beta[-1] + rnorm(n)
+
+# Crear un data frame
+data <- data.frame(y = y, x)
+
+# Ajustar el modelo de regresión lineal
+model <- lm(y ~ ., data = data)
+
+# Obtener los coeficientes estimados
+beta_hat <- coef(model)
+
+# Calcular el estimador sintético para cada área
+y_tilde <- beta_hat[1] + as.matrix(data[, -1]) %*% beta_hat[-1]
+
+# Mostrar los resultados
+data.frame(Area = 1:n, Estimacion_Sintetica = y_tilde)
+
+```
+
+```{r}
+data
+```
+
+
+
+## Ejemplo de Estimador Sintético
+
+Supongamos que tenemos un modelo con \(n = 3\) áreas y \(p = 2\) covariables. Los datos y los coeficientes estimados son los siguientes:
+
+1. **Covariables auxiliares (\(\mathbf{X}\))**:
+\[
+\mathbf{X} = \begin{pmatrix}
+1 & x_{11} & x_{12} \\
+1 & x_{21} & x_{22} \\
+1 & x_{31} & x_{32}
+\end{pmatrix}
+= \begin{pmatrix}
+1 & 2 & 3 \\
+1 & 4 & 5 \\
+1 & 6 & 7
+\end{pmatrix}
+\]
+
+2. **Coeficientes estimados (\(\hat{\beta}\))**:
+\[
+\hat{\beta} = \begin{pmatrix}
+\hat{\beta}_0 \\
+\hat{\beta}_1 \\
+\hat{\beta}_2
+\end{pmatrix}
+= \begin{pmatrix}
+0.5 \\
+1.0 \\
+1.5
+\end{pmatrix}
+\]
+
+3. **Estimador sintético (\(\hat{\tilde{Y}_i}\))**:
+\[
+\hat{\tilde{Y}_i} = \mathbf{x}_i^\top \hat{\beta}, \quad i = 1, \ldots, 3
+\]
+
+Calculamos \(\hat{\tilde{Y}_i}\) para cada área:
+
+- Para \(i = 1\):
+\[
+\hat{\tilde{Y}_1} = \begin{pmatrix}
+1 & 2 & 3
+\end{pmatrix}
+\begin{pmatrix}
+0.5 \\
+1.0 \\
+1.5
+\end{pmatrix}
+= 1 \cdot 0.5 + 2 \cdot 1.0 + 3 \cdot 1.5 = 0.5 + 2 + 4.5 = 7
+\]
+
+- Para \(i = 2\):
+\[
+\hat{\tilde{Y}_2} = \begin{pmatrix}
+1 & 4 & 5
+\end{pmatrix}
+\begin{pmatrix}
+0.5 \\
+1.0 \\
+1.5
+\end{pmatrix}
+= 1 \cdot 0.5 + 4 \cdot 1.0 + 5 \cdot 1.5 = 0.5 + 4 + 7.5 = 12
+\]
+
+- Para \(i = 3\):
+\[
+\hat{\tilde{Y}_3} = \begin{pmatrix}
+1 & 6 & 7
+\end{pmatrix}
+\begin{pmatrix}
+0.5 \\
+1.0 \\
+1.5
+\end{pmatrix}
+= 1 \cdot 0.5 + 6 \cdot 1.0 + 7 \cdot 1.5 = 0.5 + 6 + 10.5 = 17
+\]
+
+Así, las estimaciones sintéticas para las tres áreas son:
+\[
+\hat{\tilde{Y}_1} = 7, \quad \hat{\tilde{Y}_2} = 12, \quad \hat{\tilde{Y}_3} = 17
+\]
+
+
+
+
+---
+title: "Estimador Sintético"
+output: pdf_document
+---
+
+## Ejemplo de Estimador Sintético
+
+Supongamos que tenemos un modelo con \(n = 3\) áreas y \(p = 2\) covariables. Los datos y los coeficientes estimados son los siguientes:
+
+1. **Covariables auxiliares (\(\mathbf{X}\))**:
+\[
+\mathbf{X} = \begin{pmatrix}
+1 & x_{11} & x_{12} \\
+1 & x_{21} & x_{22} \\
+1 & x_{31} & x_{32}
+\end{pmatrix}
+= \begin{pmatrix}
+1 & 2 & 3 \\
+1 & 4 & 5 \\
+1 & 6 & 7
+\end{pmatrix}
+\]
+
+2. **Coeficientes estimados (\(\hat{\beta}\))**:
+\[
+\hat{\beta} = \begin{pmatrix}
+\hat{\beta}_0 \\
+\hat{\beta}_1 \\
+\hat{\beta}_2
+\end{pmatrix}
+= \begin{pmatrix}
+0.5 \\
+1.0 \\
+1.5
+\end{pmatrix}
+\]
+
+3. **Estimador sintético (\(\hat{\tilde{Y}_i}\))**:
+\[
+\hat{\tilde{Y}_i} = \mathbf{x}_i^\top \hat{\beta}, \quad i = 1, \ldots, 3
+\]
+
+Calculamos \(\hat{\tilde{Y}_i}\) para cada área:
+
+- Para \(i = 1\):
+\[
+\hat{\tilde{Y}_1} = \begin{pmatrix}
+1 & 2 & 3
+\end{pmatrix}
+\begin{pmatrix}
+0.5 \\
+1.0 \\
+1.5
+\end{pmatrix}
+= 1 \cdot 0.5 + 2 \cdot 1.0 + 3 \cdot 1.5 = 0.5 + 2 + 4.5 = 7
+\]
+
+- Para \(i = 2\):
+\[
+\hat{\tilde{Y}_2} = \begin{pmatrix}
+1 & 4 & 5
+\end{pmatrix}
+\begin{pmatrix}
+0.5 \\
+1.0 \\
+1.5
+\end{pmatrix}
+= 1 \cdot 0.5 + 4 \cdot 1.0 + 5 \cdot 1.5 = 0.5 + 4 + 7.5 = 12
+\]
+
+- Para \(i = 3\):
+\[
+\hat{\tilde{Y}_3} = \begin{pmatrix}
+1 & 6 & 7
+\end{pmatrix}
+\begin{pmatrix}
+0.5 \\
+1.0 \\
+1.5
+\end{pmatrix}
+= 1 \cdot 0.5 + 6 \cdot 1.0 + 7 \cdot 1.5 = 0.5 + 6 + 10.5 = 17
+\]
+
+Así, las estimaciones sintéticas para las tres áreas son:
+\[
+\hat{\tilde{Y}_1} = 7, \quad \hat{\tilde{Y}_2} = 12, \quad \hat{\tilde{Y}_3} = 17
+\]
+
+## Significado de la Transpuesta
+
+La transpuesta en \(\mathbf{x}_i^\top \hat{\beta}\) se refiere a la operación de transposición aplicada al vector \(\mathbf{x}_i\). Aquí te explico cada componente:
+
+1. **Vector de covariables (\(\mathbf{x}_i\))**:
+   \[
+   \mathbf{x}_i = \begin{pmatrix}
+   x_{i1} \\
+   x_{i2} \\
+   \vdots \\
+   x_{ip}
+   \end{pmatrix}
+   \]
+   Este es un vector columna que contiene las covariables auxiliares para el área \(i\)-ésima.
+
+2. **Transpuesta del vector (\(\mathbf{x}_i^\top\))**:
+   \[
+   \mathbf{x}_i^\top = \begin{pmatrix}
+   x_{i1} & x_{i2} & \cdots & x_{ip}
+   \end{pmatrix}
+   \]
+   La transposición convierte el vector columna en un vector fila.
+
+3. **Coeficientes estimados (\(\hat{\beta}\))**:
+   \[
+   \hat{\beta} = \begin{pmatrix}
+   \hat{\beta}_1 \\
+   \hat{\beta}_2 \\
+   \vdots \\
+   \hat{\beta}_p
+   \end{pmatrix}
+   \]
+   Este es un vector columna que contiene los coeficientes estimados del modelo de regresión.
+
+4. **Producto escalar (\(\mathbf{x}_i^\top \hat{\beta}\))**:
+   \[
+   \mathbf{x}_i^\top \hat{\beta} = \begin{pmatrix}
+   x_{i1} & x_{i2} & \cdots & x_{ip}
+   \end{pmatrix}
+   \begin{pmatrix}
+   \hat{\beta}_1 \\
+   \hat{\beta}_2 \\
+   \vdots \\
+   \hat{\beta}_p
+   \end{pmatrix}
+   = x_{i1} \hat{\beta}_1 + x_{i2} \hat{\beta}_2 + \cdots + x_{ip} \hat{\beta}_p
+   \]
+   Este producto escalar da como resultado un valor escalar que es la estimación sintética \(\hat{\tilde{Y}_i}\) para el área \(i\)-ésima.
+   
+# 2 Modelos lineales mixtos
+
+
+
+# 3 Modelamiento de datos espaciales
+
+
+
+
+
+# 4 Modelo Fay-Herriot
+
+El modelo Fay-Herriot es una variante del modelo lineal mixto, que incluye efectos aleatorios y covariables con información a nivel de área. 
+
+Consideremos una población dividida en n áreas pequeñas donde $\theta_i$ representa un parámetro de interés a estimar (ej.total o la media) en el
+área i-ésima. Además, se asume que $\theta_i$ se relaciona con un vector de $p$ variables auxiliares que dependen de lascaracterísticas del área en mención ${z}_i$ mediante un modelo lineal mixto:
+
+$$
+\theta_i = \mathbf{z}_i^\top \beta + v_i, \quad i = 1, \ldots, n
+$$
+
+$$
+\mathbf{z}_i = \begin{pmatrix}
+z_{1i} & z_{2i} & \cdots & z_{pi}
+\end{pmatrix}^\top, \quad \boldsymbol{\beta} = \begin{pmatrix}
+\beta_1 & \beta_2 & \cdots & \beta_p
+\end{pmatrix}^\top
+$$
+Donde:
+$$
+\mathbf{z}_i^\top \beta, \quad i = 1, \ldots, n
+$$
+es el vector de px1 coeficientes de regresion y
+$$
+v_i, \quad i = 1, \ldots, n
+$$
+los efectos aleatorios del area, que se asumen distrubuidos normalmente, ademas de ser independientes es identicamente distribuidos con:
+$$
+E(v_i) = 0, \quad V(v_i) = \sigma^2, \quad v_i \geq 0
+$$
+Ejemplo en R
+
+```{r}
+# Instalar y cargar los paquetes necesarios
+
+library(lme4)
+library(dplyr)
+library(ggplot2)
+
+# Crear un conjunto de datos de ejemplo
+set.seed(123)
+n <- 20  # Aumentar el número de observaciones
+p <- 3   # Número de covariables
+
+# Generar covariables auxiliares
+z <- matrix(rnorm(n * p), nrow = n, ncol = p)
+colnames(z) <- paste0("z", 1:p)
+
+# Coeficientes de regresión verdaderos
+beta <- c(2, -1, 0.5)
+
+# Generar los efectos aleatorios
+sigma_v <- 1
+v <- rnorm(n / 2, mean = 0, sd = sigma_v)  # 10 áreas, 2 observaciones por área
+
+# Generar la variable de interés
+theta <- z %*% beta + rep(v, each = 2)
+
+# Crear un data frame
+data <- data.frame(Area = factor(rep(1:10, each = 2)), theta = theta, z)
+
+# Ajustar el modelo Fay-Herriot
+model <- lmer(theta ~ z1 + z2 + z3 + (1 | Area), data = data)
+
+# Obtener los coeficientes estimados
+beta_hat <- fixef(model)
+v_hat <- ranef(model)$Area[,1]
+
+# # Mostrar los resultados
+# results <- data.frame(Area = rep(1:10, each = 2), 
+#                       Theta = theta, 
+#                       Estimacion_Sintetica = z %*% beta_hat, 
+#                       Efecto_Aleatorio = rep(v_hat, each = 2))
+# print(results)
+# 
+# # Visualizar los resultados
+# ggplot(results, aes(x = Area)) +
+#   geom_point(aes(y = Theta), color = "blue", size = 3) +
+#   geom_point(aes(y = Estimacion_Sintetica), color = "red", size = 3) +
+#   geom_point(aes(y = Efecto_Aleatorio), color = "green", size = 3) +
+#   labs(y = "Valores", title = "Modelo Fay-Herriot: Resultados por Área") +
+#   theme_minimal() +
+#   scale_y_continuous(sec.axis = sec_axis(~ ., name = "Efecto Aleatorio", breaks = v_hat))
+
+
+
+```
+Estimador BLUP y EBLUP
+
+Para obtener los estimadores de los parámetros del modelo Fay-Herriot y de su variante espacial es necesario
+derivar un estimador que tenga las propiedades deseadas de insesgamiento y de menor varianza similares al
+estimador BLUE derivado del **teorema de Gauss-Markov**. En el caso de los modelos lineales mixtos se obtiene
+el mejor predictor lineal insesgado (BLUP por sus siglas en inglés), el cual minimiza el error cuadrático medio
+del parámetro de interés.
+
+teorema de Gauss-Markov
+
+El Teorema de Gauss-Markov establece que, bajo ciertos supuestos, el estimador de mínimos cuadrados ordinarios (OLS) es el mejor estimador lineal insesgado (BLUE) de los coeficientes de un modelo de regresión lineal. Esto significa que es:
+
+Lineal: El estimador es una combinación lineal de las variables dependientes.
+
+Insesgado: En promedio, el estimador da el valor verdadero de los coeficientes.
+
+Varianza mínima: Entre todos los estimadores lineales insesgados, el estimador OLS tiene la menor varianza.
+
+Para que el teorema se cumpla, deben satisfacerse los siguientes supuestos:
+
+Linealidad: El modelo de regresión es lineal en los parámetros. Es decir, la relación entre la variable dependiente y las variables independientes se puede expresar como una combinación lineal de los parámetros. $ y_i = \beta_0 + \beta_1 x_{i1} + \beta_2 x_{i2} + \cdots + \beta_p x_{ip} + \epsilon_i $
+
+Muestra aleatoria: Los datos son una muestra aleatoria de la población, lo que garantiza que las observaciones son independientes entre sí.
+
+No multicolinealidad: Las variables explicativas no son perfectamente colineales. Esto significa que no hay una relación lineal exacta entre las variables independientes.
+
+Esperanza cero del error: El valor esperado de los errores es cero. $ E(\epsilon_i) = 0 $
+
+Homoscedasticidad: La varianza de los errores es constante para todas las observaciones. $ Var(\epsilon_i) = \sigma^2 $
+
+¿Por qué es importante?
+
+El Teorema de Gauss-Markov es importante porque nos asegura que, bajo estos supuestos, el estimador OLS es el mejor posible en términos de precisión (varianza mínima) y exactitud (insesgado). Esto nos da confianza en los resultados obtenidos al usar la regresión lineal para hacer inferencias y predicciones.
+
+Imagina que quieres predecir el precio de una casa basado en su tamaño. Si ajustas un modelo de regresión lineal que relaciona el precio con el tamaño de la casa, el Teorema de Gauss-Markov te dice que, si se cumplen los supuestos mencionados, los coeficientes estimados por OLS serán los mejores posibles en términos de ser insesgados y tener la menor varianza.
+
+```{r}
+# Instalar y cargar los paquetes necesarios
+
+library(ggplot2)
+library(dplyr)
+library(broom)
+
+# Crear un conjunto de datos simulado
+set.seed(123)
+n <- 100  # Número de observaciones
+x1 <- rnorm(n, mean = 5, sd = 2)
+x2 <- rnorm(n, mean = 10, sd = 3)
+x3 <- rnorm(n, mean = 15, sd = 4)
+epsilon <- rnorm(n, mean = 0, sd = 1)
+beta_0 <- 2
+beta_1 <- 3
+beta_2 <- -1
+beta_3 <- 0.5
+y <- beta_0 + beta_1 * x1 + beta_2 * x2 + beta_3 * x3 + epsilon
+
+# Crear un data frame
+data <- data.frame(x1 = x1, x2 = x2, x3 = x3, y = y)
+data
+```
+```{r}
+# Ajustar el modelo de regresión lineal
+model <- lm(y ~ x1 + x2 + x3, data = data)
+
+# Resumen del modelo
+summary(model)
+```
+```{r}
+# Verificar los supuestos del Teorema de Gauss-Markov
+
+# 1. Linealidad
+ggplot(data, aes(x = x1, y = y)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE, color = "red") +
+  labs(title = "Supuesto de Linealidad para x1")
+
+ggplot(data, aes(x = x2, y = y)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE, color = "red") +
+  labs(title = "Supuesto de Linealidad para x2")
+
+ggplot(data, aes(x = x3, y = y)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE, color = "red") +
+  labs(title = "Supuesto de Linealidad para x3")
+
+# 2. Esperanza cero del error
+residuals_mean <- mean(residuals(model))
+print(paste("Media de los residuos:", residuals_mean))
+
+# 3. Homoscedasticidad
+ggplot(data, aes(x = fitted(model), y = residuals(model))) +
+  geom_point() +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  labs(title = "Supuesto de Homoscedasticidad")
+
+# 4. No multicolinealidad
+cor(data[, c("x1", "x2", "x3")])
+
+# Visualizar los resultados del modelo
+tidy(model)
+
+# Visualizar los residuos
+augment(model) %>%
+  ggplot(aes(x = .fitted, y = .resid)) +
+  geom_point() +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  labs(title = "Residuos vs Valores Ajustados")
+
+
+```
+
+
+
+HARO_ABANTO_MARCIAL_MODELO_FAY-HERRIOT_ESPACIAL (1)

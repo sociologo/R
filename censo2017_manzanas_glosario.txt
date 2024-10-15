@@ -1,0 +1,143 @@
+
+PERSONAS 
+Número total de personas Corresponde al total de personas efectivamente censada
+
+INMIGRANTES 
+Total de personas migrantes
+
+PUEBLO 
+Total de personas que se consideran pertenecientes a un pueblo indígena u originario
+
+VIV_PART 
+Total de viviendas particulares 
+
+VIV_COL 
+Total de viviendas colectivas
+
+VPOMP 
+Total de viviendas particulares ocupadas con moradores presentes
+
+TOTAL_VIV 
+Corresponde al total de viviendas efectivamente censadas tanto
+particulares como colectivas
+
+indicador hacinamiento: PERSONAS/VPOMP : cantidad de personas por vivienda
+indicador inmigracion: INMIGRANTES/PERSONAS
+indicador originarios: PUEBLO/PERSONAS
+
+CANT_HOG Cantidad de hogares 
+
+***
+
+P01_1 Tipo de vivienda particular
+“Casa”
+
+P01_2 Tipo de vivienda particular
+“Departamento en edificio”
+
+P01_3
+Tipo de vivienda particular
+“Vivienda tradicional indígena
+(ruka, pae pae u otras)”
+
+P01_4
+Tipo de vivienda particular
+“Pieza en casa antigua o en conventillo”
+
+P01_5
+Tipo de vivienda particular
+“Mediagua, mejora, rancho o choza”
+
+P01_6
+Tipo de vivienda particular
+“Móvil (carpa, casa rodante o similar)”
+
+P01_7 
+Tipo de vivienda particular “Otro tipo de vivienda particular”
+
+indicador tipo de vivienda :  (P01_1 + P01_2)/(P01_1 + P01_2 + P01_3 + P01_4 + P01_5 + P01_6 + P01_7)
+
+***
+
+P03A_1 Materialidad en las paredes
+exteriores con hormigón armado
+
+P03A_2
+Materialidad en las paredes exteriores con albañilería: bloque de cemento, piedra o ladrillo
+
+P03A_3
+Materialidad en las paredes exteriores con tabique forrado por ambas caras (madera o acero)
+
+P03A_4
+Materialidad en las paredes exteriores con tabique sin forro interior (madera u otro)
+
+P03A_5
+Materialidad en las paredes exteriores de adobe, barro, quincha, pirca u otro artesanal tradicional
+
+P03A_6
+Materialidad en las paredes exteriores con materiales precarios (lata, cartón, plástico, etc.)
+
+***
+
+P03B_1
+Materialidad en la cubierta del techo con tejas o tejuelas de arcilla, metálicas, de cemento, de madera, asfálticas o plásticas
+
+P03B_2 
+Materialidad en la cubierta del techo de losa hormigón
+
+P03B_3
+Materialidad en la cubierta del techo de planchas metálicas de zinc, cobre, etc. o fibrocemento(tipo pizarreño)
+
+P03B_4
+Materialidad en la cubierta del techo de fonolita o plancha de fieltro embreado
+
+P03B_5
+Materialidad en la cubierta del techo de paja, coirón, totora o caña
+
+P03B_6
+Materialidad en la cubierta del techo de materiales precarios(lata, cartón, plástico, etc.)
+
+P03B_7
+Materialidad en la cubierta del techo sin cubierta sólida del techo
+
+***
+
+P03C_1
+Materialidad en el piso de parquet, piso flotante, cerámico, madera, alfombra, flexit, cubrepiso u otro similar; sobre radier o vigas de madera.
+
+P03C_2 
+Materialidad en el piso de radier sin revestimiento
+
+P03C_3 
+Materialidad en el piso de baldosa de cemento
+
+P03C_4 
+Materialidad en el piso de capa de cemento sobre tierra
+
+P03C_5 
+Materialidad en el piso de tierra 
+
+***
+
+MATACEP 
+Total de viviendas con materialidad aceptable
+
+MATREC 
+Total de viviendas con materialidad recuperable
+
+MATIRREC 
+total de viviendas con materialidad irrecuperable
+
+***
+
+P05_1
+Cantidad de viviendas que declaran que el origen del agua es de red pública
+
+P05_2
+Cantidad de viviendas que declaran que el origen del agua es de pozo o noria
+
+P05_3
+Cantidad de viviendas que declaran que el origen del agua es de camión aljibe
+
+P05_4
+Cantidad de viviendas que declaran que el origen del agua es de río, vertiente, estero, canal, lago, etc.

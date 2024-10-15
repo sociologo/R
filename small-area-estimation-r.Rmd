@@ -1,0 +1,506 @@
+---
+title: "SAE"
+author: 
+  - name: Christian Castro
+    degrees: "Sociólogo, Analista programador"
+date: "`r lubridate::today()`"
+abstract: |
+
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    toc_depth: 2
+    number_sections: true
+    code_folding: hide
+    theme: cosmo
+csl: apa-6th-edition.csl
+bibliography: references.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, message=FALSE, warning=FALSE, include = FALSE, echo = FALSE}
+
+#suppressWarnings(library(RODBC))
+
+library(ggplot2)
+library(ggpubr)
+library(markdown)
+library(shiny)
+library(shinythemes)
+library(tidyverse)
+library(magrittr)
+library(lubridate)
+library(plotly)
+library(xts)
+library(dygraphs)
+library(kableExtra)
+library(knitr)
+library("readxl")
+library(rsconnect)
+library(dplyr)
+library(summarytools)
+library(epiDisplay)
+library(leaflet)
+library(haven)
+library(epiDisplay)
+library("readxl")
+library(expss)
+library(hrbrthemes)
+library(viridis)
+library(viridisLite)
+library(DescTools)
+library(roperators)
+library(shinycssloaders)
+library(writexl)
+library(labelled)
+library(tidyverse)
+library(haven)
+library(readr)
+library(sjmisc)
+library(WriteXLS)
+library(ineq)
+library(readstata13)
+library(reldist)
+library(DT)
+library(dplyr)
+library(kableExtra)
+library(ggplot2)
+library(sf)
+```
+
+# Introducción
+
+Nuestra investigación es la determinación de la información estadística recopilada por la Encuesta de Caracterización Socioeconómica Nacional (Casen) de Chile al nivel más granular posible. La finalidad de este estudio es, evidentemente, precisar con el mayor grado de verosimilitud el área mínima sobre la cual se pueden estimar variables cruciales para el desarrollo y bienestar de una población, tales como el ingreso medio, el nivel de pobreza o la morbilidad de enfermedades.
+
+Actualmente, la Casen proporciona representatividad a nivel nacional, regional y, en algunos casos aislados, a nivel provincial. Sin embargo, nuestro objetivo es desglosar esta información a un nivel más detallado, específicamente a nivel comunal y, de ser posible, a nivel de manzanas.
+
+La Casen, en colaboración con la Comisión Económica para América Latina y el Caribe (Cepal), ha implementado la metodología de Estimación en Áreas Pequeñas (SAE) para llevar su información a nivel comunal. No obstante, esta implementación es limitada. Nuestras observaciones indican que no se dispone de manera masiva de toda la información recopilada por la Casen a nivel comunal, y mucho menos a nivel de manzanas. Además, los informes priorizan la metodología estadística y las ecuaciones sofisticadas, en lugar de ofrecer un desarrollo objetivo y claro que sea accesible para todos los interesados.
+
+En resumen, nuestro estudio busca superar estas limitaciones y proporcionar una herramienta más precisa y accesible para la estimación de variables socioeconómicas a niveles geográficos más detallados, lo cual es esencial para la formulación de políticas públicas efectivas y focalizadas. 
+
+# Conceptos básicos de encuestas. [@1]
+
+Para comprender la estimación de áreas pequeñas, necesitamos entender lo que es la estimación de encuestas y los términos dominio, estimador directo, estimador indirecto, error cuadrático medio (MSE) y varianza. 
+
+Para tomar decisiones políticas se necesitan datos fiables. Por eso los gobiernos realizan registros de todos los individuos que conforman un país como un censo, o encuestas a nivel nacional, o encuestas periódicas como la Casen. **En una encuesta, se extrae una muestra aleatoria de la población objetivo**, por ejemplo, los ciudadanos de un país, y se entrevista a los encuestados. Con esta muestra, podemos estimar indicadores socioeconómicos de pobreza o salud a cierto nivel rerritorial para que sea una estimacion valida.
+
+Las estimaciones para la población total nacional o regional están bien, pero nos interesa información mucho más detallada y específica de cada dominio. Un dominio es un subgrupo de población, también llamado área o subpoblación. Los dominios se pueden definir por aspectos regionales, temporales o demográficos, así como por combinaciones de estos tres. Por ejemplo, podemos definir nuestros dominios de interés como las combinaciones cruzadas de 5 estados por 5 clases de edad por 12 meses (un total de 300 dominios). Los estados son información regional, los meses son información específica del tiempo y las clases de edad son información demográfica. De la Casen, queremos obtener estimaciones para varias variables como pobreza, condiciones de vida o morbilidad en varios niveles de dominio, por ejemplo, comunas y manzanas.
+
+Los estimadores.
+
+En la teoría de encuestas, un estimador es una función matemática utilizada para inferir el valor de un parámetro poblacional desconocido a partir de los datos obtenidos de una muestra. Los estimadores son fundamentales en la estadística inferencial, ya que permiten hacer generalizaciones sobre una población completa basándose en una parte representativa de ella.
+
+Existen diferentes formas en las que podemos utilizar la información de muestra para la estimación de dominios. Un estimador directo para un dominio A considera solo la información de muestra del dominio A para la estimación. Por ejemplo, si quisieras estimar la cantidad de personas empleadas en un Región, solo considerarías la información de muestra de esa Region. 
+
+También hay estimadores indirectos. Para producir una estimación para el dominio A, un estimador indirecto utiliza no solo información de muestra del dominio A, sino también información de otros dominios. **La idea es aprovechar la fuerza de la combinación de la información de diferentes dominios y aumentar el tamaño de muestra efectiva de la estimación**. Los estimadores indirectos utilizan modelos implícitos o explícitos para formular un vínculo entre la información de diferentes dominios. **Los estimadores indirectos son los métodos clave utilizados para la estimación de áreas pequeñas.**
+
+La información auxiliar (o covariables) es información adicional que podemos usar en el proceso de estimación de una encuesta. Puede ser información de muestra de otros dominios, información de una encuesta diferente, información del último censo o información de registros como registros de impuestos. Tanto los estimadores directos como los indirectos pueden hacer uso de la información auxiliar.
+
+¿Qué tan preciso es un estimador?
+
+Una muestra aleatoria significa que para cada una, obtenemos una muestra diferente y, por lo tanto, estimaciones diferentes. El error cuadrático medio (MSE) de un estimador representa su dispersión entre las diferentes muestras posibles y nos ayuda a ver hasta qué punto podemos confiar en las estimaciones individuales. Para el MSE, tenemos la siguiente relación [@2]:
+
+\[
+\text{ECM}(\hat{\theta}) = \mathbb{E}[(\hat{\theta} - \theta)^2] = \text{Var}(\hat{\theta}) + \left(\text{Sesgo}(\hat{\theta})\right)^2
+\]
+
+```{r}
+# Generar datos de ejemplo
+#set.seed(123)
+n <- 100
+true_values <- rnorm(n, mean = 50, sd = 10)  # Valores reales
+
+# Tomar una muestra de los valores verdaderos para las predicciones
+sample_size <- 99  # Número de predicciones menor que el número de valores verdaderos
+sample_indices <- sample(1:n, size = sample_size, replace = TRUE)
+predictions <- true_values[sample_indices]
+
+# Calcular el sesgo
+bias <- mean(predictions) - mean(true_values)
+
+# Calcular la varianza de las predicciones
+variance <- var(predictions)
+
+# Calcular el ECM
+mse <- variance + bias^2
+
+# Mostrar los resultados
+cat("Sesgo:", bias, "\n")
+cat("Varianza:", variance, "\n")
+cat("Error Cuadrático Medio (ECM):", mse, "\n")
+
+```
+Un estimador con un sesgo distinto de cero se denomina sesgado . En el caso de un estimador insesgado, el MSE es igual a su varianza. Si un país está formado por 1 millón de personas, un estimador basado en muestras aleatorias de 10.000 personas tendrá, sin duda, un MSE menor que el mismo estimador basado en muestras aleatorias de 100 personas. Solo con el MSE o la varianza podemos decir cuán confiables son ciertas estimaciones de encuestas.
+
+Estimadores directos e indirectos
+
+Los estimadores indirectos parecen buenos, ya que utilizan más información y modelos. Entonces, ¿por qué no usamos siempre estimadores indirectos en lugar de directos? Bueno, ambos tienen ventajas y desventajas. Los estimadores directos son (asintóticamente) imparciales con respecto al proceso de muestreo. Para dominios con tamaños de muestra grandes, producen estimaciones confiables sin la necesidad de ningún proceso de modelado. Sin embargo, para dominios con tamaños de muestra pequeños, pueden poseer grandes variaciones. Muchos estimadores indirectos, al menos los modelos de área pequeña que cubrimos aquí, están basados en modelos. Los estimadores basados en modelos generalmente no son imparciales con respecto al proceso de muestreo. Por otro lado, su MSE no depende tanto de los tamaños de muestra del dominio como el MSE de los estimadores directos. Por lo tanto, para dominios con tamaños de muestra pequeños, los estimadores indirectos pueden dar estimaciones mucho más precisas que los estimadores directos. ¡Pero tenga cuidado aquí! Las características de los estimadores basados en modelos dependen en gran medida de qué tan bien se ajusta el modelo elegido a los datos. Si el modelo está mal elegido, los estimadores pueden estar severamente sesgados y tener MSE más altos que los estimadores directos.
+
+# Estimación de área pequeña
+
+No necesariamente un área pequeña es simplemente un dominio particularmente chico. Las encuestas están diseñadas para producir estimaciones directas precisas para los dominios de interés elegidos. Para otros, los tamaños de la muestra pueden ser tan pequeños que los estimadores directos tienen una **alta varianza**. Por ejemplo, las estimaciones directas calculadas a partir de una encuesta pueden ser precisas para Regiones pero inexactas para comunas. **Los dominios para los cuales los estimadores directos no son lo suficientemente precisos se denominan áreas pequeñas o dominios pequeños**. Por lo tanto, que un dominio se considere pequeño no depende del tamaño del dominio en sí, sino del tamaño de la muestra en el dominio. La pregunta es: ¿el tamaño de la muestra en el dominio da como resultado estimadores directos precisos? Si no es así, lo llamamos dominio pequeño o área pequeña.
+
+## ¿Cómo obtener estimaciones precisas en áreas pequeñas?
+
+Para obtener estimaciones precisas para áreas pequeñas o dominios pequeños, hay dos posibilidades: 
+
+(1) Podríamos cambiar el diseño de muestreo y aumentar los tamaños de muestra en los dominios. Esto disminuiría la varianza de los estimadores directos. Sin embargo, las encuestas tienen limitaciones de costo. No es posible tener tamaños de muestra altos para todos los dominios potenciales de interés. 
+
+(2) **Podemos aplicar técnicas de estimación de áreas pequeñas**. Las técnicas SAE están diseñadas para manejar el problema de áreas pequeñas mediante el uso de estimadores indirectos. Los estimadores indirectos combinan información de muestra de diferentes dominios y potencialmente información auxiliar adicional. Vinculan la diferente información mediante el uso de modelos implícitos o modelos explícitos. Hay muchas formas diferentes en las que se pueden formular los modelos para estimadores indirectos.
+
+Los modelos Fay-Herriot (FH) -a nivel de área- y Battese-Harter-Fuller (BHF) -a nivel de unidad- son tipos especiales de modelos lineales mixtos (LMM) . En este punto, nos lo ponemos fácil simplemente asumiendo que conocemos la teoría de los modelos mixtos. Si desea saber más sobre la teoría de modelos mixtos y cómo se derivan los llamados Predictores empíricos lineales imparciales mejores (EBLUP) bajo estos modelos, le recomendamos que eche un vistazo a Modelos mixtos: teoría y aplicaciones con R para obtener una introducción general a los modelos mixtos y A Course on Small Area Estimation and Mixed Models para obtener una descripción general con el foco en los modelos de áreas pequeñas.
+
+## El modelo Fay-Herriot (FH).
+
+
+
+
+
+
+
+
+
+## Modelo Battese-Harter-Fuller (BHF)
+
+Ilustramos el modelo BHF utilizando datos de encuestas y satélites para maíz y soja en 12 condados de Iowa, obtenidos de la Encuesta Enumerativa de junio de 1978 del Departamento de Agricultura de los Estados Unidos y de satélites de observatorios terrestres (LANDSAT) durante la temporada de crecimiento de 1978 [@Sae]:
+
+```{r}
+# Load the necessary libraries
+library(sae)
+library(MASS)
+library(lme4)
+
+# Load the dataset
+data("cornsoybean")
+cornsoybean
+
+```
+
+
+
+```{r}
+library('sae')
+
+```
+
+Es un data frame con 37 observaciones sobre las siguientes 5 variables.
+
+County:
+Código numérico del condado.
+
+CornHec:
+hectáreas de maíz reportadas a partir de la encuesta.
+
+SoyBeansHec:
+Las hectáreas de frijoles de soja reportadas a partir de la encuesta.
+
+CornPix:
+Número de píxeles de maíz en el segmento de muestra dentro del condado, a partir de datos satelitales.
+
+SoyBeansPix:
+Número de píxeles de frijoles de soja en un segmento de muestra dentro del condado, a partir de datos satelitales.
+
+Con los datos, queremos estimar el promedio de hectáreas de cultivo de maíz del condado. En terminología de área pequeña: Los 12 condados son los **dominios de interés** y las medias de hectáreas de cultivo de maíz del condado son los **parámetros de interés**.
+
+Para calcular el modelo BHF necesitamos información de encuesta a nivel de unidad sobre nuestra variable de interés. En esta aplicación: El número de hectáreas de maíz por segmento muestreado.
+
+Además, necesitamos información auxiliar. Nos interesan las medias de dominio. La media es una función lineal en sus datos de entrada. Para las funciones lineales, necesitamos conocer los tamaños de dominio. En esta aplicación eso significa: Necesitamos saber cuántos segmentos hay por condado. Para todas las variables auxiliares, necesitamos tener acceso a las medias del dominio y a la información a nivel de unidad para cada unidad muestreada en la encuesta.
+
+La muestra de datos de la encuesta a nivel de unidad de maíz y soja consta de 37 observaciones. La observación 33 se identifica como un valor atípico y se excluye. Cada una de las 36 líneas de datos restantes contiene información sobre un segmento muestreado de un condado. A partir de la encuesta, se tiene información sobre las variables CornHec y SoyBeansHec, el número de hectáreas con maíz y frijol de soya en los segmentos muestreados.
+
+cornsoybean es un conjunto de datos a nivel de unidad, ya que los segmentos son las unidades de muestreo de la encuesta. Las variables CornPix y SoyBeansPix denotan el número de píxeles de maíz y soja por segmento, recopilados a partir de datos satelitales adicionales.
+
+Para calcular el modelo BHF, también necesitamos conocer el número de segmentos por dominio, que corresponde a los tamaños de dominio. Además, necesitamos las medias de dominio de las variables auxiliares. La información está disponible en el conjunto de datos cornsoybeanmeans, recopilados a partir de datos satelitales.
+
+```{r}
+data("cornsoybeanmeans")
+# ?cornsoybeanmeans     # Documentation 
+str(cornsoybeanmeans) # Structure
+cornsoybeanmeans
+```
+
+A partir de las medias de maízsoja, tenemos el número medio de píxeles de maíz MeanCornPixPerSeg y los píxeles de soja MeanSoyBeansPixPerSeg por segmento y el número total de segmentos PopnSegments para cada uno de los 12 condados.
+
+Tenemos todos los datos que necesitamos. Calculemos el modelo BHF.
+
+```{r 4, message=FALSE, warning=FALSE, include = FALSE, echo = FALSE}
+set.seed(123) # Seed for bootstrap iterations
+#pbmseBHF # Documentation
+mod_BHF <- pbmseBHF(formula  = CornHec ~ CornPix + SoyBeansPix,
+                    dom      = County, 
+                    meanxpop = cornsoybeanmeans[, c("CountyIndex", 
+                                                    "MeanCornPixPerSeg",
+                                                    "MeanSoyBeansPixPerSeg")], 
+                    popnsize = cornsoybeanmeans[, c("CountyIndex", 
+                                                    "PopnSegments")], 
+                    method   = "REML", 
+                    data     = cornsoybean,
+                    B        = 200)
+```
+
+El propósito general de este código es realizar una estimación de pequeñas áreas (Small Area Estimation) utilizando el modelo de Fay-Herriot con bootstrap para calcular los errores estándar. Aquí tienes una explicación detallada de cada parte del código y su propósito:
+
+Fijar la semilla para reproducibilidad:
+
+set.seed(123) # Seed for bootstrap iterations
+
+Esto asegura que los resultados de las iteraciones de bootstrap sean reproducibles. Al fijar la semilla, obtendrás los mismos resultados cada vez que ejecutes el código.
+
+?pbmseBHF # Documentation
+
+Esto abre la documentación de la función pbmseBHF para que puedas ver detalles sobre su uso y parámetros.
+
+mod_BHF <- pbmseBHF(
+  formula  = CornHec ~ CornPix + SoyBeansPix,
+  dom      = County, 
+  meanxpop = cornsoybeanmeans[, c("CountyIndex", "MeanCornPixPerSeg", "MeanSoyBeansPixPerSeg")], 
+  popnsize = cornsoybeanmeans[, c("CountyIndex", "PopnSegments")], 
+  method   = "REML", 
+  data     = cornsoybean,
+  B        = 200
+)
+
+Propósito: Este bloque de código crea un modelo de estimación de pequeñas áreas utilizando la función pbmseBHF. Aquí están los detalles de cada parámetro:
+
+formula = CornHec ~ CornPix + SoyBeansPix: Especifica la fórmula del modelo, donde CornHec es la variable dependiente (hectáreas de maíz) y CornPix y SoyBeansPix son las variables independientes (píxeles de maíz y soja).
+
+dom = County: Define los dominios (áreas pequeñas) como los condados.
+
+meanxpop = cornsoybeanmeans[, c("CountyIndex", "MeanCornPixPerSeg", "MeanSoyBeansPixPerSeg")]: Proporciona las medias de las variables auxiliares (CornPix y SoyBeansPix) por condado.
+
+popnsize = cornsoybeanmeans[, c("CountyIndex", "PopnSegments")]: Proporciona el tamaño de la población (número de segmentos) por condado.
+
+method = "REML": Especifica el método de estimación, en este caso, el método de máxima verosimilitud restringida (REML).
+
+data = cornsoybean: Define el conjunto de datos que se utilizará para el modelo.
+
+B = 200: Especifica el número de iteraciones de bootstrap para calcular los errores estándar.
+
+Propósito general: Este código construye un modelo de estimación de pequeñas áreas para predecir la cantidad de hectáreas de maíz en diferentes condados, utilizando datos de píxeles de maíz y soja como variables explicativas. El modelo ajusta las estimaciones a nivel de condado y utiliza bootstrap para calcular los errores estándar, asegurando así la precisión de las estimaciones.
+
+En resumen, el objetivo es mejorar la precisión de las estimaciones de hectáreas de maíz en diferentes condados mediante el uso de un modelo estadístico avanzado que incorpora información auxiliar y técnicas de bootstrap.
+
+no me queda claro porque la medicion con pixeles exclusivamente no es suficiente para calcular las hectareas de maiz
+
+Entiendo tu duda. Vamos a profundizar en por qué la medición con píxeles de imágenes satelitales no es suficiente por sí sola para calcular con precisión las hectáreas de maíz:
+
+Limitaciones de las Imágenes Satelitales
+Resolución Espacial:
+Las imágenes satelitales tienen una resolución limitada, lo que significa que cada píxel representa un área relativamente grande en el suelo. Esto puede llevar a una subestimación o sobreestimación de las hectáreas de maíz si los píxeles contienen una mezcla de diferentes tipos de uso del suelo.
+Errores de Clasificación:
+Los algoritmos que clasifican los píxeles en diferentes tipos de cultivos pueden cometer errores. Por ejemplo, un píxel clasificado como maíz podría en realidad contener otros cultivos o vegetación no agrícola.
+Variabilidad Temporal:
+Las imágenes satelitales capturan un momento específico en el tiempo. Las condiciones del cultivo pueden cambiar rápidamente debido a factores como el clima, plagas o prácticas agrícolas, lo que no siempre se refleja en las imágenes.
+Condiciones Atmosféricas:
+Las condiciones atmosféricas, como nubes o humo, pueden afectar la calidad de las imágenes satelitales, dificultando la clasificación precisa de los cultivos.
+Ventajas de Combinar Datos
+Datos de Encuestas:
+Las encuestas de campo proporcionan mediciones directas y detalladas de las hectáreas de maíz, incluyendo información sobre prácticas agrícolas, tipos de cultivos y condiciones del suelo que no se capturan en las imágenes satelitales.
+Información Complementaria:
+Al combinar datos de encuestas con datos satelitales, se puede corregir y ajustar los errores de clasificación y la variabilidad espacial de las imágenes satelitales. Esto mejora la precisión de las estimaciones.
+Modelos Estadísticos:
+Los modelos como el BHF utilizan información auxiliar (píxeles de imágenes satelitales) junto con datos observados (encuestas de campo) para proporcionar estimaciones más robustas y precisas. Estos modelos pueden ajustar por variabilidad y errores en los datos auxiliares.
+
+
+El modelo BHF devuelve una lista. Con $est$eblup, podemos extraer los Mejores Predictores Lineales Empíricos Insesgados (EBLUPs) del modelo. Con $mse, podemos extraer el Error Cuadrático Medio (MSE) estimado de los EBLUPs. El MSE se estima utilizando un procedimiento de arranque paramétrico. Para que los resultados de bootstrap sean reproducibles, establecemos una semilla.
+
+El MSE es una medida absoluta. A menudo, las medidas relativas nos dan una mejor imagen de la precisión. Por lo tanto, calculamos el coeficiente de variación (CV), CV = raíz MSE de valor estimado / valor estimado * 100.
+
+```{r}
+BHF_CV <- 100 * sqrt(mod_BHF$mse$mse) / mod_BHF$est$eblup$eblup
+```
+
+Por último, el modelo devuelve los siguientes resultados.
+
+```{r}
+data.frame(County_name  = cornsoybeanmeans$CountyName,
+           Sample_Size  = mod_BHF$est$eblup$sampsize,
+           BHF_EBLUP    = round(mod_BHF$est$eblup$eblup, digits = 2), 
+           BHF_CV       = round(BHF_CV, digits = 2))
+```
+
+¡Enhorabuena, acabamos de calcular un modelo BHF! Con el modelo BHF predijimos el número medio de hectáreas de maíz en 12 condados del estado estadounidense de Iowa utilizando datos satelitales como información auxiliar, véase la columna BHF_EBLUP. Las predicciones oscilan entre 106.66 y 144.31. El correspondiente coeficiente de variación (CV) nos muestra la dispersión relativa estimada de estas predicciones.
+
+Para estimar datos de la CASEN a nivel de manzana utilizando el censo, generalmente se recomienda el modelo de Fay-Herriot (FH) porque:
+
+Datos Agregados: Es probable que tengas datos agregados del censo a nivel de manzana, lo que se ajusta bien al enfoque del modelo FH.
+Mejora de Estimaciones: El modelo FH es eficaz para mejorar las estimaciones directas de la encuesta utilizando información auxiliar agregada, lo cual es crucial cuando las estimaciones directas tienen alta variabilidad.
+
+
+Modelo de Battese-Harter-Fuller (BHF)
+El modelo BHF es ideal para situaciones donde tienes datos detallados a nivel de unidad (en este caso, personas) y deseas hacer estimaciones a nivel de áreas pequeñas (manzanas) utilizando información auxiliar agregada (datos del censo).@BHF
+
+```{r}
+# Cargar el paquete necesario
+library(sae)
+
+# Generar datos de ejemplo
+set.seed(123)
+m <- 30  # Número de áreas pequeñas
+x <- rnorm(m, mean = 50, sd = 10)  # Covariables
+beta <- 2  # Coeficiente de regresión
+sigma2u <- 4  # Varianza del efecto aleatorio
+sigma2e <- 9  # Varianza del error de muestreo
+
+# Generar efectos aleatorios y errores de muestreo
+u <- rnorm(m, mean = 0, sd = sqrt(sigma2u))
+e <- rnorm(m, mean = 0, sd = sqrt(sigma2e))
+
+# Generar estimaciones directas
+y <- beta * x + u + e
+
+# Crear un data frame con los datos
+data <- data.frame(area = 1:m, y = y, x = x, var.y = rep(sigma2e, m))
+
+# Ajustar el modelo Fay-Herriot
+fit <- eblupFH(y ~ x, vardir = var.y, data = data)
+
+# Mostrar los resultados
+summary(fit)
+
+# Obtener las estimaciones empíricas Bayes
+fit$eblup
+```
+
+El caso de la Casen.
+
+
+13118
+Macul
+13120
+Ñuñoa
+
+
+
+```{r}
+# quiero desplegar el y1 promedio en cada comuna de santiago
+```
+
+<div class="scrollable-table">
+```{r 10, message=FALSE, warning=FALSE, echo = FALSE}
+Casen2022 <- readRDS("Casen2022.rds")
+# Filtrar los registros y modificar la variable estrato
+Casen2022_filtrado <- Casen2022 %>%
+  filter(grepl("^13", estrato) & !is.na(ytot) & ytot != -88) %>%
+  mutate(estrato_modificado = substr(estrato, 1, nchar(estrato) - 2))
+
+# Calcular el promedio de y1 por estrato modificado
+promedio_ytot_por_estrato <- Casen2022_filtrado %>%
+  group_by(estrato_modificado) %>%
+  summarise(
+    promedio_ytot = mean(ytot, na.rm = TRUE),
+    conteo_registros = n()
+  )
+kable(promedio_ytot_por_estrato, format = "html", caption = "Promedio de ytot comunales") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), 
+                full_width = F, 
+                position = "center") %>%
+  row_spec(0, bold = TRUE, color = "white", background = "#4CAF50") %>%  # Estilo para la cabecera
+  column_spec(1, bold = TRUE, color = "green") %>%
+  column_spec(2, background = "")
+```
+
+```{r}
+# Cargar el paquete necesario
+library(dplyr)
+
+# Filtrar los registros y reemplazar los valores en la columna estrato_modificado
+promedio_ytot_por_estrato_modificado <- promedio_ytot_por_estrato %>%
+  filter(estrato_modificado %in% c(13118, 13120)) %>%
+  mutate(
+    estrato_modificado = case_when(
+      estrato_modificado == 13118 ~ "Macul",
+      estrato_modificado == 13120 ~ "Ñuñoa"
+    )
+  ) %>%
+  rename(Comuna = estrato_modificado)
+
+# Mostrar el resultado
+print(promedio_ytot_por_estrato_modificado)
+
+
+```
+```{r}
+# Cargar el archivo RDS
+censo_data <- readRDS("Microdato_Censo2017_Personas.rds")
+
+# Seleccionar las primeras 7 columnas y los primeros 50 registros
+subset_data <- censo_data[1:5, 1:7]
+
+# Mostrar el resultado
+print(subset_data)
+
+```
+```{r}
+# Contar los registros con valores 13118 y 13120 en la columna COMUNA
+count_13118 <- sum(censo_data$COMUNA == 13118)
+count_13120 <- sum(censo_data$COMUNA == 13120)
+
+# Crear un nuevo data frame con los valores y los conteos
+result <- data.frame(
+  COMUNA = c(13118, 13120),
+  Total_Registros = c(count_13118, count_13120)
+)
+
+# Mostrar el resultado
+print(result)
+
+
+```
+# Referencias
+
+<div id="refs"></div>
+
+```{r}
+# # Cargar el paquete necesario
+# library(rgee)
+# 
+# # Inicializar rgee
+# ee_install_upgrade()
+# ee_Initialize()
+# 
+# # Definir la región de interés (Región Metropolitana de Santiago)
+# roi <- ee$Geometry$Rectangle(c(-70.9, -33.7, -70.5, -33.2))
+# 
+# # Cargar la colección de imágenes Landsat 8
+# landsat <- ee$ImageCollection("LANDSAT/LC08/C01/T1_TOA")$
+#   filterBounds(roi)$
+#   filterDate("2015-01-01", "2020-12-31")
+# 
+# # Función para calcular el NDVI
+# addNDVI <- function(image) {
+#   ndvi <- image$normalizedDifference(c("B5", "B4"))$rename("NDVI")
+#   return(image$addBands(ndvi))
+# }
+# 
+# # Aplicar la función NDVI a la colección de imágenes
+# landsat_ndvi <- landsat$map(addNDVI)
+# 
+# # Crear una imagen compuesta utilizando el valor máximo de NDVI
+# ndvi_max <- landsat_ndvi$qualityMosaic("NDVI")
+# 
+# # Definir un umbral para clasificar áreas deforestadas
+# ndvi_threshold <- 0.3
+# deforestation <- ndvi_max$select("NDVI")$lt(ndvi_threshold)
+# 
+# # Visualizar los resultados
+# Map$centerObject(roi, zoom = 10)
+# Map$addLayer(ndvi_max, list(bands = c("B4", "B3", "B2"), max = 0.3), "Landsat 8")
+# Map$addLayer(deforestation, list(palette = c("red")), "Deforestation")
+# 
+# # Exportar los resultados a Google Drive
+# task <- ee$batch$Export$image$toDrive(
+#   image = deforestation,
+#   description = "Deforestation_Map",
+#   scale = 30,
+#   region = roi$bounds()
+# )
+# task$start()
+
+```
+
+
