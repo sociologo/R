@@ -6,6 +6,8 @@ Tengo la necesidad de estudiar modelos mixtos pero debo iniciar con tutoriales i
    Mixed Models with R
    Getting started with random effects
    Michael Clark
+   carpeta: mixed-models-with-r-workshop-2019-master
+
 
 2. Introduction to linear mixed models
    Created by Gabriela K Hajduk - last updated 9th February 2022 by Elise Gallois
