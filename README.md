@@ -1,5 +1,16 @@
 # R
 
+Tengo la necesidad de estudiar modelos mixtos pero debo iniciar con tutoriales introductorios. He seleccionado estos dos:
+
+1. https://m-clark.github.io/mixed-models-with-R/
+   Mixed Models with R
+   Getting started with random effects
+   Michael Clark
+   
+3. Introduction to linear mixed models
+   Created by Gabriela K Hajduk - last updated 9th February 2022 by Elise Gallois
+   https://ourcodingclub.github.io/tutorials/mixed-models/#plots
+
 https://www.geosegmentacion.cl/
 
 https://www.ine.gob.cl/estadisticas/sociales/censos-de-poblacion-y-vivienda/censo-de-poblacion-y-vivienda
