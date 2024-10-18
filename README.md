@@ -9,10 +9,11 @@ Tengo la necesidad de estudiar modelos mixtos pero debo iniciar con tutoriales i
    carpeta: mixed-models-with-r-workshop-2019-master
 
 
-2. Introduction to linear mixed models
-   Created by Gabriela K Hajduk - last updated 9th February 2022 by Elise Gallois
-   https://ourcodingclub.github.io/tutorials/mixed-models/#plots
-
+2. Introduction to linear mixed models \
+   Created by Gabriela K Hajduk\
+   last updated 9th February 2022 by Elise Gallois\
+   https://ourcodingclub.github.io/tutorials/mixed-models/#plots\
+   carpeta: CC-Linear-mixed-models-master
 ***
 
 
