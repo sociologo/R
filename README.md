@@ -3,9 +3,9 @@
 Tengo la necesidad de estudiar modelos mixtos pero debo iniciar con tutoriales introductorios. He seleccionado estos dos:
 
 1. https://m-clark.github.io/mixed-models-with-R/
-   Mixed Models with R
-   Getting started with random effects
-   Michael Clark
+   Mixed Models with R\
+   Getting started with random effects\
+   Michael Clark\
    carpeta: mixed-models-with-r-workshop-2019-master
 
 
