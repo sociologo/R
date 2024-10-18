@@ -10,7 +10,7 @@
 
 
 
-<meta name="date" content="2024-10-15" />
+<meta name="date" content="2024-10-16" />
 
 <title>Estimador Sintético</title>
 
@@ -1586,7 +1586,7 @@ border-radius: 0px;
 
 <h1 class="title toc-ignore">Estimador Sintético</h1>
 <h4 class="author">Christian Castro</h4>
-<h4 class="date">2024-10-15</h4>
+<h4 class="date">2024-10-16</h4>
 
 </div>
 
@@ -2023,6 +2023,413 @@ es la estimación sintética <span class="math inline">\(\hat{\tilde{Y}_i}\)</sp
 <div id="modelos-lineales-mixtos" class="section level1" number="2">
 <h1><span class="header-section-number">2</span> 2 Modelos lineales
 mixtos</h1>
+<p><span class="math display">\[\mathbf{y} =
+\mathbf{X}\boldsymbol{\beta} + \mathbf{Z}\mathbf{u} +
+\boldsymbol{\epsilon}\]</span> <span class="math display">\[
+\begin{array}{l}
+  \mathbf{y} : \text{es el vector de respuestas (n x 1) } \\
+  \mathbf{X} : \text{es la matriz de diseño para los efectos fijos (n x
+p)} \\
+  \boldsymbol{\beta} : \text{es el vector de coeficientes de efectos
+fijos (p x 1)} \\
+  \mathbf{Z} : \text{es la matriz de diseño para los efectos aleatorios
+(n x q) } \\
+  \mathbf{u} : \text{es el vector de efectos aleatorios (q x 1)}, donde
+\mathbf{u} \sim \mathcal{N}(\mathbf{0}, \mathbf{G}) \\
+  \boldsymbol{\epsilon}: \text{es el vector de errores (n x 1)}, donde
+\boldsymbol{\epsilon} \sim \mathcal{N}(\mathbf{0}, \mathbf{R})
+\end{array}
+\]</span> La matriz de covarianza de <span class="math display">\[\mathbf{y}\]</span>es:</p>
+<p><span class="math display">\[\mathbf{V} =
+\mathbf{Z}\mathbf{G}\mathbf{Z}^\top + \mathbf{R}\]</span></p>
+<p>Los modelos lineales mixtos son una extensión de los modelos de
+regresión lineal clásicos. Se utilizan para analizar datos que tienen
+una estructura jerárquica o de agrupamiento, lo que es común en estudios
+longitudinales y en investigaciones donde las observaciones están
+agrupadas en diferentes niveles (por ejemplo, estudiantes dentro de
+escuelas, pacientes dentro de hospitales).</p>
+<p>Características Principales Efectos Fijos y Aleatorios: Efectos
+Fijos: Son los mismos para todas las unidades de análisis y representan
+la relación promedio entre las variables independientes y la variable
+dependiente. Efectos Aleatorios: Varían entre las unidades de análisis y
+permiten capturar la variabilidad no explicada por los efectos fijos.
+Estos efectos ayudan a modelar la heterogeneidad en los datos. Matriz de
+Covarianzas: Los modelos lineales mixtos utilizan una matriz de
+covarianzas para modelar la estructura de correlación entre las
+observaciones. Esto es especialmente útil en datos longitudinales donde
+las observaciones repetidas de un mismo sujeto están correlacionadas.
+Aplicaciones Comunes Estudios Longitudinales: Para analizar datos donde
+las mismas unidades (como individuos) son observadas en múltiples
+momentos en el tiempo. Investigación Educativa: Para estudiar el
+rendimiento escolar de estudiantes dentro de diferentes escuelas.
+Investigación Psicológica: Para analizar comportamientos o bienestar de
+individuos dentro de diferentes contextos.</p>
+<p>Vamos a crear un ejemplo detallado en R que ilustre la formulación
+algebraica de un modelo lineal mixto. Utilizaremos un conjunto de datos
+simulado para este propósito.</p>
+<p>Paso 1: Crear el Conjunto de Datos</p>
+<p>Primero, generamos un conjunto de datos simulado con una estructura
+jerárquica. Supongamos que tenemos estudiantes (efecto aleatorio) y sus
+puntajes en un examen (variable dependiente), además de una variable
+independiente (horas de estudio).</p>
+<pre class="r"><code># Instalar y cargar el paquete lme4
+# install.packages(&quot;lme4&quot;)
+library(lme4)</code></pre>
+<pre><code>## Cargando paquete requerido: Matrix</code></pre>
+<pre class="r"><code># Crear un conjunto de datos simulado
+set.seed(123)
+n_students &lt;- 30
+n_obs_per_student &lt;- 5
+total_obs &lt;- n_students * n_obs_per_student
+
+# Variables independientes
+students &lt;- factor(rep(1:n_students, each = n_obs_per_student))
+hours_studied &lt;- rnorm(total_obs, mean = 5, sd = 2)
+
+# Efectos aleatorios y errores
+random_intercepts &lt;- rnorm(n_students, mean = 0, sd = 2)
+errors &lt;- rnorm(total_obs, mean = 0, sd = 1)
+
+# Variable dependiente
+exam_scores &lt;- 50 + 5 * hours_studied + rep(random_intercepts, each = n_obs_per_student) + errors
+
+# Crear el data frame
+data &lt;- data.frame(
+  student = students,
+  hours_studied = hours_studied,
+  exam_scores = exam_scores
+)
+
+data</code></pre>
+<pre><code>##     student hours_studied exam_scores
+## 1         1     3.8790487    69.90740
+## 2         1     4.5396450    75.53689
+## 3         1     8.1174166    91.81291
+## 4         1     5.1410168    76.41505
+## 5         1     5.2585755    77.63208
+## 6         2     8.4301300    93.49156
+## 7         2     5.9218324    82.25717
+## 8         2     2.4698775    63.97221
+## 9         2     3.6262943    70.42361
+## 10        2     4.1086761    71.58217
+## 11        3     7.4481636    88.11967
+## 12        3     5.7196277    78.93786
+## 13        3     5.8015429    79.76670
+## 14        3     5.2213654    75.87587
+## 15        3     3.8883177    68.79519
+## 16        4     8.5738263    92.84959
+## 17        4     5.9957010    78.56246
+## 18        4     1.0667657    52.06580
+## 19        4     6.4027118    79.38564
+## 20        4     4.0544172    67.06985
+## 21        5     2.8643526    66.28167
+## 22        5     4.5640502    73.89376
+## 23        5     2.9479911    64.23591
+## 24        5     3.5422175    68.01538
+## 25        5     3.7499215    68.09636
+## 26        6     1.6266134    57.09603
+## 27        6     6.6755741    82.02848
+## 28        6     5.3067462    75.37832
+## 29        6     2.7237261    64.70875
+## 30        6     7.5076298    86.92333
+## 31        7     5.8529284    80.50987
+## 32        7     4.4098570    73.41895
+## 33        7     6.7902513    86.30971
+## 34        7     6.7562670    84.39125
+## 35        7     6.6431622    83.34928
+## 36        8     6.3772805    82.81722
+## 37        8     6.1078353    79.35314
+## 38        8     4.8761766    72.91294
+## 39        8     4.3880747    69.95922
+## 40        8     4.2390580    69.16570
+## 41        9     3.6105860    69.43290
+## 42        9     4.5841654    75.49276
+## 43        9     2.4692073    65.40983
+## 44        9     9.3379119    99.35109
+## 45        9     7.4159240    88.66991
+## 46       10     2.7537828    63.07950
+## 47       10     4.1942303    69.51739
+## 48       10     4.0666893    68.86707
+## 49       10     6.5599302    82.93514
+## 50       10     4.8332619    72.40156
+## 51       11     5.5066370    81.59390
+## 52       11     4.9429065    76.72964
+## 53       11     4.9142591    76.89126
+## 54       11     7.7372046    90.05292
+## 55       11     4.5484580    74.27332
+## 56       12     8.0329412    86.74934
+## 57       12     1.9024944    57.23119
+## 58       12     6.1692275    79.16677
+## 59       12     5.2477085    74.46449
+## 60       12     5.4318831    74.27953
+## 61       13     5.7592790    75.48746
+## 62       13     3.9953531    66.95426
+## 63       13     4.3335852    70.64368
+## 64       13     2.9628492    61.15663
+## 65       13     2.8564175    61.58273
+## 66       14     5.6070573    86.41973
+## 67       14     5.8964196    85.86320
+## 68       14     5.1060085    80.65228
+## 69       14     6.8445349    90.03999
+## 70       14     9.1001694   102.46839
+## 71       15     4.0179377    68.88037
+## 72       15     0.3816622    50.51272
+## 73       15     7.0114770    83.87975
+## 74       15     3.5815985    67.16477
+## 75       15     3.6239828    68.88471
+## 76       16     7.0511427    85.76360
+## 77       16     4.4304540    73.82952
+## 78       16     2.5585646    64.02003
+## 79       16     5.3626070    77.29585
+## 80       16     4.7222173    72.67464
+## 81       17     5.0115284    75.80966
+## 82       17     5.7705608    79.63607
+## 83       17     4.2586799    72.61369
+## 84       17     6.2887531    84.01710
+## 85       17     4.5590269    76.36135
+## 86       18     5.6635639    78.89784
+## 87       18     7.1936780    84.86768
+## 88       18     5.8703630    76.62773
+## 89       18     4.3481368    70.38434
+## 90       18     7.2976152    85.60972
+## 91       19     6.9870077    86.81378
+## 92       19     6.0967939    82.48022
+## 93       19     5.4774635    79.10535
+## 94       19     3.7441878    68.35939
+## 95       19     7.7213049    90.48989
+## 96       20     3.7994808    69.28878
+## 97       20     9.3746660    97.78606
+## 98       20     8.0652213    91.13859
+## 99       20     4.5285993    73.80909
+## 100      20     2.9471582    65.49840
+## 101      21     3.5791869    65.79770
+## 102      21     5.5137674    77.87457
+## 103      21     4.5066162    72.48835
+## 104      21     4.3049148    70.82816
+## 105      21     3.0967629    65.17120
+## 106      22     4.9099446    74.81435
+## 107      22     3.4301911    67.50256
+## 108      22     1.6641161    60.09201
+## 109      22     4.2395470    71.10927
+## 110      22     6.8379932    84.48862
+## 111      23     3.8493061    70.34678
+## 112      23     6.2159286    82.06569
+## 113      23     1.7642346    59.89830
+## 114      23     4.8888761    73.79878
+## 115      23     6.0388144    82.12842
+## 116      24     5.6023067    82.33514
+## 117      24     5.2113524    82.18052
+## 118      24     3.7185880    71.49894
+## 119      24     3.3005913    70.78084
+## 120      24     2.9517424    70.26553
+## 121      25     5.2352932    73.97855
+## 122      25     3.1050508    63.28989
+## 123      25     4.0188851    67.67321
+## 124      25     4.4878156    69.90389
+## 125      25     8.6877240    91.51879
+## 126      26     3.6961002    66.61969
+## 127      26     5.4707731    73.14766
+## 128      26     5.1559217    73.79960
+## 129      26     3.0762867    64.42612
+## 130      26     4.8573838    74.13250
+## 131      27     7.8891017    90.82226
+## 132      27     5.9030081    80.34739
+## 133      27     5.0824658    73.76118
+## 134      27     4.1550063    70.24910
+## 135      27     0.8935056    54.19106
+## 136      28     7.2626744    87.63786
+## 137      28     2.0787199    60.90889
+## 138      28     6.4798950    81.76179
+## 139      28     8.8182071    96.39643
+## 140      28     2.1122137    62.09342
+## 141      29     6.4035687    83.12832
+## 142      29     4.4756050    74.46918
+## 143      29     1.8557117    58.81283
+## 144      29     1.9706647    61.38719
+## 145      29     1.7969277    59.33477
+## 146      30     3.9381870    69.45795
+## 147      30     2.0764888    59.40489
+## 148      30     6.3758335    81.59540
+## 149      30     9.2002179    96.41988
+## 150      30     2.4259390    61.22025</code></pre>
+<p>Paso 2: Ajustar el Modelo Lineal Mixto</p>
+<p>Ajustamos el modelo lineal mixto utilizando la función lmer del
+paquete lme4.</p>
+<pre class="r"><code># Ajustar el modelo lineal mixto
+modelo &lt;- lmer(exam_scores ~ hours_studied + (1 | student), data = data)
+
+# Resumen del modelo
+summary(modelo)</code></pre>
+<pre><code>## Linear mixed model fit by REML [&#39;lmerMod&#39;]
+## Formula: exam_scores ~ hours_studied + (1 | student)
+##    Data: data
+## 
+## REML criterion at convergence: 513
+## 
+## Scaled residuals: 
+##      Min       1Q   Median       3Q      Max 
+## -2.62263 -0.56962 -0.09721  0.51101  2.26724 
+## 
+## Random effects:
+##  Groups   Name        Variance Std.Dev.
+##  student  (Intercept) 3.7609   1.9393  
+##  Residual             0.9613   0.9805  
+## Number of obs: 150, groups:  student, 30
+## 
+## Fixed effects:
+##               Estimate Std. Error t value
+## (Intercept)   49.94202    0.42895   116.4
+## hours_studied  5.08922    0.04616   110.3
+## 
+## Correlation of Fixed Effects:
+##             (Intr)
+## hours_studd -0.533</code></pre>
+<p>Paso 3: Desglose Matemático</p>
+<p>Para entender la matemática detrás del modelo, desglosamos las
+matrices y vectores involucrados:</p>
+<p>3.1 Matriz de Diseño para Efectos Fijos <span class="math inline">\(\mathbf{X}\)</span>:</p>
+<p>Cada fila de <span class="math inline">\(\mathbf{X}\)</span>
+corresponde a una observación y cada columna a una variable
+independiente. En nuestro caso, <span class="math inline">\(\mathbf{X}\)</span> incluye una columna de unos
+(intercepto) y la variable hours_studied.</p>
+<pre class="r"><code>X &lt;- model.matrix(~ hours_studied, data = data)
+head(X)</code></pre>
+<pre><code>##   (Intercept) hours_studied
+## 1           1      3.879049
+## 2           1      4.539645
+## 3           1      8.117417
+## 4           1      5.141017
+## 5           1      5.258575
+## 6           1      8.430130</code></pre>
+<p>3.2 Matriz de Diseño para Efectos Aleatorios (()):</p>
+<p>() es una matriz de indicadores para los efectos aleatorios (en este
+caso, los estudiantes).</p>
+<pre class="r"><code>Z &lt;- model.matrix(~ 0 + student, data = data)
+head(Z)</code></pre>
+<pre><code>##   student1 student2 student3 student4 student5 student6 student7 student8
+## 1        1        0        0        0        0        0        0        0
+## 2        1        0        0        0        0        0        0        0
+## 3        1        0        0        0        0        0        0        0
+## 4        1        0        0        0        0        0        0        0
+## 5        1        0        0        0        0        0        0        0
+## 6        0        1        0        0        0        0        0        0
+##   student9 student10 student11 student12 student13 student14 student15
+## 1        0         0         0         0         0         0         0
+## 2        0         0         0         0         0         0         0
+## 3        0         0         0         0         0         0         0
+## 4        0         0         0         0         0         0         0
+## 5        0         0         0         0         0         0         0
+## 6        0         0         0         0         0         0         0
+##   student16 student17 student18 student19 student20 student21 student22
+## 1         0         0         0         0         0         0         0
+## 2         0         0         0         0         0         0         0
+## 3         0         0         0         0         0         0         0
+## 4         0         0         0         0         0         0         0
+## 5         0         0         0         0         0         0         0
+## 6         0         0         0         0         0         0         0
+##   student23 student24 student25 student26 student27 student28 student29
+## 1         0         0         0         0         0         0         0
+## 2         0         0         0         0         0         0         0
+## 3         0         0         0         0         0         0         0
+## 4         0         0         0         0         0         0         0
+## 5         0         0         0         0         0         0         0
+## 6         0         0         0         0         0         0         0
+##   student30
+## 1         0
+## 2         0
+## 3         0
+## 4         0
+## 5         0
+## 6         0</code></pre>
+<p>3.3 Vector de Efectos Aleatorios (()):</p>
+<p>() sigue una distribución normal multivariante con media cero y
+matriz de covarianza ().</p>
+<pre class="r"><code>u &lt;- ranef(modelo)$student[,1]
+head(u)</code></pre>
+<pre><code>## [1]  0.8586240  1.3398438 -0.2121577 -2.3920813  0.1701011 -0.9330217</code></pre>
+<p>3.4 Vector de Errores (()):</p>
+<p>() sigue una distribución normal multivariante con media cero y
+matriz de covarianza ().</p>
+<pre class="r"><code>epsilon &lt;- resid(modelo)
+head(epsilon)</code></pre>
+<pre><code>##           1           2           3           4           5           6 
+## -0.63456753  1.63300696 -0.29902878 -0.54934402  0.06940097 -0.69306675</code></pre>
+<p>Paso 4: Verificación de la Matriz de Covarianza</p>
+<p>La matriz de covarianza de () es:</p>
+<p><span class="math display">\[\mathbf{V} =
+\mathbf{Z}\mathbf{G}\mathbf{Z}^\top + \mathbf{R}\]</span></p>
+<p>Podemos verificar esto en R:</p>
+<pre class="r"><code># Matriz de covarianza de los efectos aleatorios
+n_levels &lt;- length(unique(data$student))
+G &lt;- diag(VarCorr(modelo)$student[1], n_levels, n_levels)
+
+# Matriz de covarianza de los errores
+R &lt;- diag(attr(VarCorr(modelo), &quot;sc&quot;)^2, total_obs)
+
+# Verificar dimensiones
+dim(Z)  # Debe ser total_obs x n_levels</code></pre>
+<pre><code>## [1] 150  30</code></pre>
+<pre class="r"><code>dim(G)  # Debe ser n_levels x n_levels</code></pre>
+<pre><code>## [1] 30 30</code></pre>
+<pre class="r"><code># Matriz de covarianza total
+V &lt;- Z %*% G %*% t(Z) + R
+head(V)</code></pre>
+<pre><code>##          1        2        3        4        5        6        7        8
+## 1 4.722145 3.760856 3.760856 3.760856 3.760856 0.000000 0.000000 0.000000
+## 2 3.760856 4.722145 3.760856 3.760856 3.760856 0.000000 0.000000 0.000000
+## 3 3.760856 3.760856 4.722145 3.760856 3.760856 0.000000 0.000000 0.000000
+## 4 3.760856 3.760856 3.760856 4.722145 3.760856 0.000000 0.000000 0.000000
+## 5 3.760856 3.760856 3.760856 3.760856 4.722145 0.000000 0.000000 0.000000
+## 6 0.000000 0.000000 0.000000 0.000000 0.000000 4.722145 3.760856 3.760856
+##          9       10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30
+## 1 0.000000 0.000000  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+## 2 0.000000 0.000000  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+## 3 0.000000 0.000000  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+## 4 0.000000 0.000000  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+## 5 0.000000 0.000000  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+## 6 3.760856 3.760856  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+##   31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56
+## 1  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+## 2  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+## 3  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+## 4  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+## 5  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+## 6  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+##   57 58 59 60 61 62 63 64 65 66 67 68 69 70 71 72 73 74 75 76 77 78 79 80 81 82
+## 1  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+## 2  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+## 3  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+## 4  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+## 5  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+## 6  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0
+##   83 84 85 86 87 88 89 90 91 92 93 94 95 96 97 98 99 100 101 102 103 104 105
+## 1  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0   0   0   0   0   0   0
+## 2  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0   0   0   0   0   0   0
+## 3  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0   0   0   0   0   0   0
+## 4  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0   0   0   0   0   0   0
+## 5  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0   0   0   0   0   0   0
+## 6  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0  0   0   0   0   0   0   0
+##   106 107 108 109 110 111 112 113 114 115 116 117 118 119 120 121 122 123 124
+## 1   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0
+## 2   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0
+## 3   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0
+## 4   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0
+## 5   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0
+## 6   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0
+##   125 126 127 128 129 130 131 132 133 134 135 136 137 138 139 140 141 142 143
+## 1   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0
+## 2   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0
+## 3   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0
+## 4   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0
+## 5   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0
+## 6   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0   0
+##   144 145 146 147 148 149 150
+## 1   0   0   0   0   0   0   0
+## 2   0   0   0   0   0   0   0
+## 3   0   0   0   0   0   0   0
+## 4   0   0   0   0   0   0   0
+## 5   0   0   0   0   0   0   0
+## 6   0   0   0   0   0   0   0</code></pre>
 </div>
 <div id="modelamiento-de-datos-espaciales" class="section level1" number="3">
 <h1><span class="header-section-number">3</span> 3 Modelamiento de datos
@@ -2060,9 +2467,8 @@ E(v_i) = 0, \quad V(v_i) = \sigma^2, \quad v_i \geq 0
 \]</span> Ejemplo en R</p>
 <pre class="r"><code># Instalar y cargar los paquetes necesarios
 
-library(lme4)</code></pre>
-<pre><code>## Cargando paquete requerido: Matrix</code></pre>
-<pre class="r"><code>library(dplyr)
+library(lme4)
+library(dplyr)
 library(ggplot2)
 
 # Crear un conjunto de datos de ejemplo

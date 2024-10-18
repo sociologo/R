@@ -440,6 +440,164 @@ La transpuesta en \(\mathbf{x}_i^\top \hat{\beta}\) se refiere a la operación d
    
 # 2 Modelos lineales mixtos
 
+$$\mathbf{y} = \mathbf{X}\boldsymbol{\beta} + \mathbf{Z}\mathbf{u} + \boldsymbol{\epsilon}$$
+$$
+\begin{array}{l}
+  \mathbf{y} : \text{es el vector de respuestas (n x 1) } \\
+  \mathbf{X} : \text{es la matriz de diseño para los efectos fijos (n x p)} \\
+  \boldsymbol{\beta} : \text{es el vector de coeficientes de efectos fijos (p x 1)} \\
+  \mathbf{Z} : \text{es la matriz de diseño para los efectos aleatorios (n x q) } \\
+  \mathbf{u} : \text{es el vector de efectos aleatorios (q x 1)}, donde \mathbf{u} \sim \mathcal{N}(\mathbf{0}, \mathbf{G}) \\
+  \boldsymbol{\epsilon}: \text{es el vector de errores (n x 1)}, donde \boldsymbol{\epsilon} \sim \mathcal{N}(\mathbf{0}, \mathbf{R})
+\end{array}
+$$
+La matriz de covarianza de $$\mathbf{y}$$es:
+
+$$\mathbf{V} = \mathbf{Z}\mathbf{G}\mathbf{Z}^\top + \mathbf{R}$$
+
+
+
+
+
+Los modelos lineales mixtos son una extensión de los modelos de regresión lineal clásicos. Se utilizan para analizar datos que tienen una estructura jerárquica o de agrupamiento, lo que es común en estudios longitudinales y en investigaciones donde las observaciones están agrupadas en diferentes niveles (por ejemplo, estudiantes dentro de escuelas, pacientes dentro de hospitales).
+
+Características Principales
+Efectos Fijos y Aleatorios:
+Efectos Fijos: Son los mismos para todas las unidades de análisis y representan la relación promedio entre las variables independientes y la variable dependiente.
+Efectos Aleatorios: Varían entre las unidades de análisis y permiten capturar la variabilidad no explicada por los efectos fijos. Estos efectos ayudan a modelar la heterogeneidad en los datos.
+Matriz de Covarianzas:
+Los modelos lineales mixtos utilizan una matriz de covarianzas para modelar la estructura de correlación entre las observaciones. Esto es especialmente útil en datos longitudinales donde las observaciones repetidas de un mismo sujeto están correlacionadas.
+Aplicaciones Comunes
+Estudios Longitudinales: Para analizar datos donde las mismas unidades (como individuos) son observadas en múltiples momentos en el tiempo.
+Investigación Educativa: Para estudiar el rendimiento escolar de estudiantes dentro de diferentes escuelas.
+Investigación Psicológica: Para analizar comportamientos o bienestar de individuos dentro de diferentes contextos.
+
+Vamos a crear un ejemplo detallado en R que ilustre la formulación algebraica de un modelo lineal mixto. Utilizaremos un conjunto de datos simulado para este propósito.
+
+Paso 1: Crear el Conjunto de Datos
+
+Primero, generamos un conjunto de datos simulado con una estructura jerárquica. Supongamos que tenemos estudiantes (efecto aleatorio) y sus puntajes en un examen (variable dependiente), además de una variable independiente (horas de estudio).
+
+```{r}
+# Instalar y cargar el paquete lme4
+# install.packages("lme4")
+library(lme4)
+
+# Crear un conjunto de datos simulado
+set.seed(123)
+n_students <- 30
+n_obs_per_student <- 5
+total_obs <- n_students * n_obs_per_student
+
+# Variables independientes
+students <- factor(rep(1:n_students, each = n_obs_per_student))
+hours_studied <- rnorm(total_obs, mean = 5, sd = 2)
+
+# Efectos aleatorios y errores
+random_intercepts <- rnorm(n_students, mean = 0, sd = 2)
+errors <- rnorm(total_obs, mean = 0, sd = 1)
+
+# Variable dependiente
+exam_scores <- 50 + 5 * hours_studied + rep(random_intercepts, each = n_obs_per_student) + errors
+
+# Crear el data frame
+data <- data.frame(
+  student = students,
+  hours_studied = hours_studied,
+  exam_scores = exam_scores
+)
+
+data
+```
+Paso 2: Ajustar el Modelo Lineal Mixto
+
+Ajustamos el modelo lineal mixto utilizando la función lmer del paquete lme4.
+
+```{r}
+# Ajustar el modelo lineal mixto
+modelo <- lmer(exam_scores ~ hours_studied + (1 | student), data = data)
+
+# Resumen del modelo
+summary(modelo)
+
+```
+
+Paso 3: Desglose Matemático
+
+Para entender la matemática detrás del modelo, desglosamos las matrices y vectores involucrados:
+
+3.1 Matriz de Diseño para Efectos Fijos $\mathbf{X}$:
+
+Cada fila de $\mathbf{X}$ corresponde a una observación y cada columna a una variable independiente.
+En nuestro caso, $\mathbf{X}$ incluye una columna de unos (intercepto) y la variable hours_studied.
+
+```{r}
+X <- model.matrix(~ hours_studied, data = data)
+head(X)
+
+```
+3.2 Matriz de Diseño para Efectos Aleatorios ((\mathbf{Z})):
+
+(\mathbf{Z}) es una matriz de indicadores para los efectos aleatorios (en este caso, los estudiantes).
+
+```{r}
+Z <- model.matrix(~ 0 + student, data = data)
+head(Z)
+
+```
+
+3.3 Vector de Efectos Aleatorios ((\mathbf{u})):
+
+(\mathbf{u}) sigue una distribución normal multivariante con media cero y matriz de covarianza (\mathbf{G}).
+
+```{r}
+u <- ranef(modelo)$student[,1]
+head(u)
+
+```
+3.4 Vector de Errores ((\boldsymbol{\epsilon})):
+
+(\boldsymbol{\epsilon}) sigue una distribución normal multivariante con media cero y matriz de covarianza (\mathbf{R}).
+
+```{r}
+epsilon <- resid(modelo)
+head(epsilon)
+
+```
+Paso 4: Verificación de la Matriz de Covarianza
+
+La matriz de covarianza de (\mathbf{y}) es:
+
+$$\mathbf{V} = \mathbf{Z}\mathbf{G}\mathbf{Z}^\top + \mathbf{R}$$
+
+
+Podemos verificar esto en R:
+
+```{r}
+# Matriz de covarianza de los efectos aleatorios
+n_levels <- length(unique(data$student))
+G <- diag(VarCorr(modelo)$student[1], n_levels, n_levels)
+
+# Matriz de covarianza de los errores
+R <- diag(attr(VarCorr(modelo), "sc")^2, total_obs)
+
+# Verificar dimensiones
+dim(Z)  # Debe ser total_obs x n_levels
+dim(G)  # Debe ser n_levels x n_levels
+
+# Matriz de covarianza total
+V <- Z %*% G %*% t(Z) + R
+head(V)
+
+
+
+```
+
+
+
+
+
+
 
 
 # 3 Modelamiento de datos espaciales
