@@ -18,7 +18,18 @@ Tengo la necesidad de estudiar modelos mixtos pero debo iniciar con tutoriales i
 
    
 ***
+Contenidos temáticos
 
+Objetivos de Desarrollo Sostenible y SAE.
+Estimadores Directos en encuestas de hogares.
+Estimadores sintéticos y compuestos.
+Modelos de área. FH
+Modelos de unidad. BHF. small-area-estimation-r.Rmd
+Mejor predictor empírico.
+Modelos bayesianos y generalizados.
+Marco de referencia para la aplicación de modelos SAE.
+Mapeo de indicadores.
+Repaso de las metodologías SAE.
 
 https://www.geosegmentacion.cl/
 
