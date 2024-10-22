@@ -31,6 +31,8 @@ Marco de referencia para la aplicación de modelos SAE.\
 Mapeo de indicadores.\
 Repaso de las metodologías SAE.
 
+https://www.youtube.com/watch?v=Szz2XNxsOW4&list=PLYhoYXG2thJ_mByg94JNJbvjqvnWXHaF-&index=12&t=2793s
+
 https://www.geosegmentacion.cl/
 
 https://www.ine.gob.cl/estadisticas/sociales/censos-de-poblacion-y-vivienda/censo-de-poblacion-y-vivienda
