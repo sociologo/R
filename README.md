@@ -1,7 +1,5 @@
 # R
 
-Tengo la necesidad de estudiar modelos mixtos pero debo iniciar con tutoriales introductorios. He seleccionado estos dos:
-
 1. **Mixed Models with R** \
    Getting started with random effects\
    Michael Clark\
