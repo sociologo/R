@@ -10,7 +10,7 @@
 
 
 
-<meta name="date" content="2024-10-14" />
+<meta name="date" content="2024-10-22" />
 
 <title>SAE</title>
 
@@ -1833,7 +1833,7 @@ border-radius: 0px;
 
 <h1 class="title toc-ignore">SAE</h1>
 <h4 class="author">Christian Castro</h4>
-<h4 class="date">2024-10-14</h4>
+<h4 class="date">2024-10-22</h4>
 
 </div>
 
@@ -1957,11 +1957,11 @@ mse &lt;- variance + bias^2
 
 # Mostrar los resultados
 cat(&quot;Sesgo:&quot;, bias, &quot;\n&quot;)</code></pre>
-<pre><code>## Sesgo: -0.4649812</code></pre>
+<pre><code>## Sesgo: -0.0003021653</code></pre>
 <pre class="r"><code>cat(&quot;Varianza:&quot;, variance, &quot;\n&quot;)</code></pre>
-<pre><code>## Varianza: 67.75698</code></pre>
+<pre><code>## Varianza: 112.8071</code></pre>
 <pre class="r"><code>cat(&quot;Error Cuadrático Medio (ECM):&quot;, mse, &quot;\n&quot;)</code></pre>
-<pre><code>## Error Cuadrático Medio (ECM): 67.97319</code></pre>
+<pre><code>## Error Cuadrático Medio (ECM): 112.8071</code></pre>
 <p>Un estimador con un sesgo distinto de cero se denomina sesgado . En
 el caso de un estimador insesgado, el MSE es igual a su varianza. Si un
 país está formado por 1 millón de personas, un estimador basado en
@@ -3006,35 +3006,26 @@ print(promedio_ytot_por_estrato_modificado)</code></pre>
 ##   &lt;chr&gt;          &lt;dbl&gt;            &lt;int&gt;
 ## 1 Macul        540346.              592
 ## 2 Ñuñoa       1044918.             1195</code></pre>
-<pre class="r"><code># Cargar el archivo RDS
-censo_data &lt;- readRDS(&quot;Microdato_Censo2017_Personas.rds&quot;)
-
-# Seleccionar las primeras 7 columnas y los primeros 50 registros
-subset_data &lt;- censo_data[1:5, 1:7]
-
-# Mostrar el resultado
-print(subset_data)</code></pre>
-<pre><code>##   REGION PROVINCIA COMUNA DC AREA ZC_LOC ID_ZONA_LOC
-## 1     15       152  15202  1    2      6       13225
-## 2     15       152  15202  1    2      6       13225
-## 3     15       152  15202  1    2      6       13225
-## 4     15       152  15202  1    2      6       13225
-## 5     15       152  15202  1    2      6       13225</code></pre>
-<pre class="r"><code># Contar los registros con valores 13118 y 13120 en la columna COMUNA
-count_13118 &lt;- sum(censo_data$COMUNA == 13118)
-count_13120 &lt;- sum(censo_data$COMUNA == 13120)
-
-# Crear un nuevo data frame con los valores y los conteos
-result &lt;- data.frame(
-  COMUNA = c(13118, 13120),
-  Total_Registros = c(count_13118, count_13120)
-)
-
-# Mostrar el resultado
-print(result)</code></pre>
-<pre><code>##   COMUNA Total_Registros
-## 1  13118          116534
-## 2  13120          208237</code></pre>
+<pre class="r"><code># # Cargar el archivo RDS
+# censo_data &lt;- readRDS(&quot;Microdato_Censo2017_Personas.rds&quot;)
+# 
+# # Seleccionar las primeras 7 columnas y los primeros 50 registros
+# subset_data &lt;- censo_data[1:5, 1:7]
+# 
+# # Mostrar el resultado
+# print(subset_data)</code></pre>
+<pre class="r"><code># # Contar los registros con valores 13118 y 13120 en la columna COMUNA
+# count_13118 &lt;- sum(censo_data$COMUNA == 13118)
+# count_13120 &lt;- sum(censo_data$COMUNA == 13120)
+# 
+# # Crear un nuevo data frame con los valores y los conteos
+# result &lt;- data.frame(
+#   COMUNA = c(13118, 13120),
+#   Total_Registros = c(count_13118, count_13120)
+# )
+# 
+# # Mostrar el resultado
+# print(result)</code></pre>
 <div id="referencias" class="section level1" number="4">
 <h1><span class="header-section-number">4</span> Referencias</h1>
 <div id="refs" class="references csl-bib-body hanging-indent" entry-spacing="0" line-spacing="2">

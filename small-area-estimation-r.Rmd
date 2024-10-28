@@ -425,29 +425,29 @@ print(promedio_ytot_por_estrato_modificado)
 
 ```
 ```{r}
-# Cargar el archivo RDS
-censo_data <- readRDS("Microdato_Censo2017_Personas.rds")
-
-# Seleccionar las primeras 7 columnas y los primeros 50 registros
-subset_data <- censo_data[1:5, 1:7]
-
-# Mostrar el resultado
-print(subset_data)
+# # Cargar el archivo RDS
+# censo_data <- readRDS("Microdato_Censo2017_Personas.rds")
+# 
+# # Seleccionar las primeras 7 columnas y los primeros 50 registros
+# subset_data <- censo_data[1:5, 1:7]
+# 
+# # Mostrar el resultado
+# print(subset_data)
 
 ```
 ```{r}
-# Contar los registros con valores 13118 y 13120 en la columna COMUNA
-count_13118 <- sum(censo_data$COMUNA == 13118)
-count_13120 <- sum(censo_data$COMUNA == 13120)
-
-# Crear un nuevo data frame con los valores y los conteos
-result <- data.frame(
-  COMUNA = c(13118, 13120),
-  Total_Registros = c(count_13118, count_13120)
-)
-
-# Mostrar el resultado
-print(result)
+# # Contar los registros con valores 13118 y 13120 en la columna COMUNA
+# count_13118 <- sum(censo_data$COMUNA == 13118)
+# count_13120 <- sum(censo_data$COMUNA == 13120)
+# 
+# # Crear un nuevo data frame con los valores y los conteos
+# result <- data.frame(
+#   COMUNA = c(13118, 13120),
+#   Total_Registros = c(count_13118, count_13120)
+# )
+# 
+# # Mostrar el resultado
+# print(result)
 
 
 ```
